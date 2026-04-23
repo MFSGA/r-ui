@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, MouseEvent } from 'react';
 import Form from '@rjsf/mui';
 import validator from '@rjsf/validator-ajv8';
 import type { IChangeEvent } from '@rjsf/core';
@@ -20,9 +20,11 @@ import {
   FormControl,
   InputLabel,
   MenuItem,
+  Menu,
   Paper,
   Select,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
@@ -62,6 +64,12 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function createParseOrder(primaryFormat: ConfigFormat | null, secondaryFormat: ConfigFormat | null) {
+  return Array.from(
+    new Set([primaryFormat, secondaryFormat, 'json', 'json5', 'yaml', 'toml'].filter(Boolean) as ConfigFormat[]),
+  );
+}
+
 function detectConfigFormat(fileName: string): ConfigFormat | null {
   const lowerName = fileName.toLowerCase();
 
@@ -82,6 +90,14 @@ function detectConfigFormat(fileName: string): ConfigFormat | null {
   }
 
   return null;
+}
+
+function detectConfigFormatFromUrl(url: string): ConfigFormat | null {
+  try {
+    return detectConfigFormat(new URL(url, window.location.href).pathname);
+  } catch {
+    return null;
+  }
 }
 
 function parseConfigText(text: string, format: ConfigFormat) {
@@ -132,6 +148,26 @@ function downloadConfigFile(config: XrayConfig, format: ConfigFormat) {
   URL.revokeObjectURL(url);
 }
 
+function parseImportedConfig(text: string, preferredFormat: ConfigFormat | null, sourceFormat: ConfigFormat | null) {
+  const parseOrder = createParseOrder(sourceFormat, preferredFormat);
+
+  for (const format of parseOrder) {
+    try {
+      const parsed = parseConfigText(text, format);
+      if (isPlainObject(parsed)) {
+        return {
+          config: orderXrayConfig(parsed as XrayConfig),
+          format,
+        };
+      }
+    } catch {
+      // Try the next supported format.
+    }
+  }
+
+  throw new Error('Unable to parse imported config.');
+}
+
 function findInitialSelectedField(config: XrayConfig) {
   return topLevelFields.find((field) => Object.prototype.hasOwnProperty.call(config, field)) ?? initialSelectedField;
 }
@@ -143,6 +179,10 @@ export default function App() {
   const [configFormat, setConfigFormat] = useState<ConfigFormat>('json');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isFullJsonOpen, setIsFullJsonOpen] = useState(false);
+  const [importMenuAnchorEl, setImportMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [isImportUrlOpen, setIsImportUrlOpen] = useState(false);
+  const [importUrl, setImportUrl] = useState('');
+  const [isImportingUrl, setIsImportingUrl] = useState(false);
   const [operationError, setOperationError] = useState<string | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -181,6 +221,7 @@ export default function App() {
     [selectedFieldValue],
   );
   const selectedFieldOptions = useMemo(() => getTopLevelFieldOptions(locale), [locale]);
+  const isImportMenuOpen = Boolean(importMenuAnchorEl);
 
   const handleChange = (event: IChangeEvent<unknown>) => {
     setConfig((currentConfig) =>
@@ -216,7 +257,16 @@ export default function App() {
     setOperationError(null);
   };
 
-  const handleImportClick = () => {
+  const handleImportMenuOpen = (event: MouseEvent<HTMLButtonElement>) => {
+    setImportMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleImportMenuClose = () => {
+    setImportMenuAnchorEl(null);
+  };
+
+  const handleImportFileClick = () => {
+    handleImportMenuClose();
     importInputRef.current?.click();
   };
 
@@ -231,39 +281,70 @@ export default function App() {
     try {
       const text = await file.text();
       const detectedFormat = detectConfigFormat(file.name);
-      const parseOrder = Array.from(
-        new Set([detectedFormat, configFormat, 'json', 'json5', 'yaml', 'toml'].filter(Boolean) as ConfigFormat[]),
-      );
-      let parsed: unknown = null;
-      let parsedSuccessfully = false;
-      let resolvedFormat: ConfigFormat | null = null;
-
-      for (const format of parseOrder) {
-        try {
-          parsed = parseConfigText(text, format);
-          parsedSuccessfully = true;
-          resolvedFormat = format;
-          break;
-        } catch {
-          // Try the next supported format.
-        }
-      }
-
-      if (!parsedSuccessfully || !isPlainObject(parsed)) {
-        setOperationError(t('app.importParseFailed'));
-        return;
-      }
-
-      const importedConfig = orderXrayConfig(parsed as XrayConfig);
+      const importedResult = parseImportedConfig(text, configFormat, detectedFormat);
+      const importedConfig = importedResult.config;
       setConfig(importedConfig);
       setSelectedField(findInitialSelectedField(importedConfig));
-      if (resolvedFormat) {
-        setConfigFormat(resolvedFormat);
-      }
+      setConfigFormat(importedResult.format);
       setOperationError(null);
       setIsSubmitted(false);
     } catch {
       setOperationError(t('app.importParseFailed'));
+    }
+  };
+
+  const handleImportUrlOpen = () => {
+    handleImportMenuClose();
+    setImportUrl('');
+    setIsImportUrlOpen(true);
+  };
+
+  const handleImportUrlClose = () => {
+    if (!isImportingUrl) {
+      setIsImportUrlOpen(false);
+    }
+  };
+
+  const handleImportUrlSubmit = async () => {
+    const normalizedUrl = importUrl.trim();
+
+    if (!normalizedUrl) {
+      setOperationError(t('app.importUrlInvalid'));
+      return;
+    }
+
+    let parsedUrl: URL;
+
+    try {
+      parsedUrl = new URL(normalizedUrl, window.location.href);
+    } catch {
+      setOperationError(t('app.importUrlInvalid'));
+      return;
+    }
+
+    setIsImportingUrl(true);
+
+    try {
+      const response = await fetch(parsedUrl.toString(), { credentials: 'omit' });
+
+      if (!response.ok) {
+        setOperationError(t('app.importUrlFetchFailed', { status: response.status, url: parsedUrl.toString() }));
+        return;
+      }
+
+      const text = await response.text();
+      const detectedFormat = detectConfigFormatFromUrl(parsedUrl.toString());
+      const importedResult = parseImportedConfig(text, configFormat, detectedFormat);
+      setConfig(importedResult.config);
+      setSelectedField(findInitialSelectedField(importedResult.config));
+      setConfigFormat(importedResult.format);
+      setOperationError(null);
+      setIsSubmitted(false);
+      setIsImportUrlOpen(false);
+    } catch {
+      setOperationError(t('app.importUrlParseFailed'));
+    } finally {
+      setIsImportingUrl(false);
     }
   };
 
@@ -388,7 +469,7 @@ export default function App() {
                     <Button type="submit" variant="contained" startIcon={<SaveRoundedIcon />}>
                       {t('app.saveModule')}
                     </Button>
-                    <Button variant="outlined" onClick={handleImportClick}>
+                    <Button variant="outlined" onClick={handleImportMenuOpen}>
                       {t('app.importConfig')}
                     </Button>
                     <Button variant="outlined" onClick={handleReset} startIcon={<ReplayRoundedIcon />}>
@@ -410,6 +491,11 @@ export default function App() {
                     </Button>
                   </Stack>
                 </Form>
+
+                <Menu anchorEl={importMenuAnchorEl} open={isImportMenuOpen} onClose={handleImportMenuClose}>
+                  <MenuItem onClick={handleImportFileClick}>{t('app.importFromFile')}</MenuItem>
+                  <MenuItem onClick={handleImportUrlOpen}>{t('app.importFromUrl')}</MenuItem>
+                </Menu>
               </Stack>
             </Paper>
 
@@ -492,6 +578,33 @@ export default function App() {
           </Button>
           <Button variant="contained" onClick={() => setIsFullJsonOpen(false)}>
             关闭
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={isImportUrlOpen} onClose={handleImportUrlClose} maxWidth="sm" fullWidth>
+        <DialogTitle>{t('app.importUrlTitle')}</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              {t('app.importUrlHint')}
+            </Typography>
+            <TextField
+              autoFocus
+              fullWidth
+              label={t('app.importUrlLabel')}
+              placeholder={t('app.importUrlPlaceholder')}
+              value={importUrl}
+              onChange={(event) => setImportUrl(event.target.value)}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleImportUrlClose} disabled={isImportingUrl}>
+            {t('app.cancel')}
+          </Button>
+          <Button variant="contained" onClick={handleImportUrlSubmit} disabled={isImportingUrl}>
+            {isImportingUrl ? t('app.importing') : t('app.importUrlSubmit')}
           </Button>
         </DialogActions>
       </Dialog>
