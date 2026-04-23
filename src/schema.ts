@@ -14,11 +14,11 @@ const rootDefinitionName = 'Basic Configuration Modules';
 const rootSchema = xraySchema.definitions[rootDefinitionName] as RJSFSchema;
 const rootProperties = rootSchema.properties ?? {};
 const topLevelFieldOrder = [
+  'inbounds',
+  'outbounds',
   'log',
   'dns',
   'routing',
-  'inbounds',
-  'outbounds',
   'api',
   'policy',
   'transport',

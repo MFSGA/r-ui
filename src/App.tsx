@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import Form from '@rjsf/mui';
 import validator from '@rjsf/validator-ajv8';
 import type { IChangeEvent } from '@rjsf/core';
@@ -43,7 +44,7 @@ function createDefaultConfig() {
   return orderXrayConfig(structuredClone(defaultConfig));
 }
 
-const initialSelectedField = topLevelFields.includes('log') ? 'log' : topLevelFields[0];
+const initialSelectedField = topLevelFields.includes('inbounds') ? 'inbounds' : topLevelFields[0];
 
 function downloadJsonFile(config: XrayConfig) {
   const content = JSON.stringify(orderXrayConfig(config), null, 2);
@@ -56,12 +57,18 @@ function downloadJsonFile(config: XrayConfig) {
   URL.revokeObjectURL(url);
 }
 
+function findInitialSelectedField(config: XrayConfig) {
+  return topLevelFields.find((field) => Object.prototype.hasOwnProperty.call(config, field)) ?? initialSelectedField;
+}
+
 export default function App() {
   const { locale, setLocale, t, translateString, transformValidationErrors } = useI18n();
   const [config, setConfig] = useState<XrayConfig>(() => createDefaultConfig());
-  const [selectedField, setSelectedField] = useState(initialSelectedField);
+  const [selectedField, setSelectedField] = useState(() => findInitialSelectedField(createDefaultConfig()));
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isFullJsonOpen, setIsFullJsonOpen] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const orderedConfig = useMemo(() => orderXrayConfig(config), [config]);
   const fullJsonPreview = useMemo(() => JSON.stringify(orderedConfig, null, 2), [orderedConfig]);
@@ -130,6 +137,37 @@ export default function App() {
       }),
     );
     setIsSubmitted(false);
+  };
+
+  const handleImportClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as unknown;
+
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        setImportError(t('app.importInvalidFormat'));
+        return;
+      }
+
+      const importedConfig = orderXrayConfig(parsed as XrayConfig);
+      setConfig(importedConfig);
+      setSelectedField(findInitialSelectedField(importedConfig));
+      setImportError(null);
+      setIsSubmitted(false);
+    } catch {
+      setImportError(t('app.importParseFailed'));
+    }
   };
 
   return (
@@ -233,6 +271,9 @@ export default function App() {
                     <Button type="submit" variant="contained" startIcon={<SaveRoundedIcon />}>
                       {t('app.saveModule')}
                     </Button>
+                    <Button variant="outlined" onClick={handleImportClick}>
+                      {t('app.importJson')}
+                    </Button>
                     <Button variant="outlined" onClick={handleReset} startIcon={<ReplayRoundedIcon />}>
                       {t('app.resetModule')}
                     </Button>
@@ -268,6 +309,8 @@ export default function App() {
                 <Button variant="outlined" onClick={() => setIsFullJsonOpen(true)}>
                   {t('app.showFullJson')}
                 </Button>
+
+                {importError ? <Alert severity="error">{importError}</Alert> : null}
 
                 <Box
                   component="pre"
@@ -318,6 +361,8 @@ export default function App() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Box component="input" ref={importInputRef} type="file" accept="application/json,.json" sx={{ display: 'none' }} onChange={handleImportFileChange} />
     </Box>
   );
 }
