@@ -41,13 +41,24 @@ export default function CollapsibleObjectFieldTemplate<
   const isRootObject = fieldPathId.path.length === 0;
   const isTlsSettingsObject = fieldPathId.path[fieldPathId.path.length - 1] === 'tlsSettings';
   const isStreamSettingsObject = fieldPathId.path[fieldPathId.path.length - 1] === 'streamSettings';
-  const isHysteriaStreamSettings =
-    isStreamSettingsObject && typeof formData === 'object' && formData !== null && !Array.isArray(formData) && 'network' in formData && (formData as Record<string, unknown>).network === 'hysteria';
+  const isObjectWithSettings =
+    (isStreamSettingsObject || fieldPathId.path[fieldPathId.path.length - 1] === 'transport') &&
+    typeof formData === 'object' &&
+    formData !== null &&
+    !Array.isArray(formData);
+  const objectFormData = isObjectWithSettings ? (formData as Record<string, unknown>) : undefined;
+  const isHysteriaStreamSettings = objectFormData?.network === 'hysteria';
+  const isTlsSecurity = objectFormData?.security === 'tls';
+  const isRealitySecurity = objectFormData?.security === 'reality';
   const hysteriaVisiblePropertyNames = new Set(['network', 'security', 'tlsSettings', 'hysteriaSettings']);
+  const tlsVisiblePropertyNames = new Set(['security', 'tlsSettings']);
+  const realityVisiblePropertyNames = new Set(['security', 'realitySettings']);
   const visibleProperties = properties.filter(
     (property) =>
       !property.hidden &&
-      (!isHysteriaStreamSettings || hysteriaVisiblePropertyNames.has(property.name)),
+      (!isHysteriaStreamSettings || hysteriaVisiblePropertyNames.has(property.name)) &&
+      (!isTlsSecurity || tlsVisiblePropertyNames.has(property.name) || !['tlsSettings', 'realitySettings'].includes(property.name)) &&
+      (!isRealitySecurity || realityVisiblePropertyNames.has(property.name) || !['tlsSettings', 'realitySettings'].includes(property.name)),
   );
   const objectTitle = title || schema.title || (locale === 'zh-CN' ? '对象配置' : 'Object');
   const canAddProperty = canExpand<T, S, F>(schema, uiSchema, formData);

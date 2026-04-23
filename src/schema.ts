@@ -7,7 +7,7 @@ import { translateSchemaLabel, translateUiPlaceholder } from './i18n';
 export type XrayConfig = Record<string, unknown>;
 export type XrayConfigKey = string;
 
-export const schema = xraySchema as RJSFSchema;
+export const schema = xraySchema as unknown as RJSFSchema;
 export const defaultConfig = xrayDefaultConfig as XrayConfig;
 
 const rootDefinitionName = 'Basic Configuration Modules';
@@ -145,7 +145,9 @@ export function normalizeProtocolSwitches(field: XrayConfigKey, nextFormData: un
 }
 
 export function normalizeSelectedFieldValue(field: XrayConfigKey, nextFormData: unknown, previousFormData: unknown) {
-  return normalizeHysteriaStreamSettingsInValue(normalizeProtocolSwitches(field, nextFormData, previousFormData));
+  return normalizeSecuritySpecificSettingsInValue(
+    normalizeHysteriaStreamSettingsInValue(normalizeProtocolSwitches(field, nextFormData, previousFormData)),
+  );
 }
 
 function normalizeHysteriaStreamSettings(streamSettings: Record<string, unknown> | undefined) {
@@ -185,6 +187,35 @@ function normalizeHysteriaStreamSettingsInValue(value: unknown): unknown {
 
   if (isRecord(normalizedValue.streamSettings)) {
     normalizedValue.streamSettings = normalizeHysteriaStreamSettings(normalizedValue.streamSettings);
+  }
+
+  return normalizedValue;
+}
+
+function normalizeSecuritySpecificSettingsInValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeSecuritySpecificSettingsInValue(item));
+  }
+
+  if (!isRecord(value)) {
+    return value;
+  }
+
+  const normalizedValue: Record<string, unknown> = {};
+
+  Object.entries(value).forEach(([key, item]) => {
+    normalizedValue[key] = normalizeSecuritySpecificSettingsInValue(item);
+  });
+
+  if (typeof normalizedValue.security === 'string') {
+    if (normalizedValue.security === 'tls') {
+      delete normalizedValue.realitySettings;
+    } else if (normalizedValue.security === 'reality') {
+      delete normalizedValue.tlsSettings;
+    } else {
+      delete normalizedValue.tlsSettings;
+      delete normalizedValue.realitySettings;
+    }
   }
 
   return normalizedValue;

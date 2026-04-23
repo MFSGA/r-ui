@@ -975,6 +975,52 @@
         {
           "if": {
             "properties": {
+              "security": {
+                "const": "tls"
+              }
+            },
+            "required": [
+              "security"
+            ]
+          },
+          "then": {
+            "required": [
+              "security",
+              "tlsSettings"
+            ],
+            "not": {
+              "required": [
+                "realitySettings"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "security": {
+                "const": "reality"
+              }
+            },
+            "required": [
+              "security"
+            ]
+          },
+          "then": {
+            "required": [
+              "security",
+              "realitySettings"
+            ],
+            "not": {
+              "required": [
+                "tlsSettings"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
               "network": {
                 "const": "hysteria"
               }
@@ -1112,7 +1158,55 @@
         "sockopt": {
           "$ref": "#/definitions/SockoptObject"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "security": {
+                "const": "tls"
+              }
+            },
+            "required": [
+              "security"
+            ]
+          },
+          "then": {
+            "required": [
+              "security",
+              "tlsSettings"
+            ],
+            "not": {
+              "required": [
+                "realitySettings"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "security": {
+                "const": "reality"
+              }
+            },
+            "required": [
+              "security"
+            ]
+          },
+          "then": {
+            "required": [
+              "security",
+              "realitySettings"
+            ],
+            "not": {
+              "required": [
+                "tlsSettings"
+              ]
+            }
+          }
+        }
+      ]
     },
     "TLSObject": {
       "type": "object",
