@@ -1,0 +1,1992 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/schemas/xray-online-based.schema.json",
+  "title": "Xray config schema (xray-online based practical subset)",
+  "description": "A practical draft-07 JSON Schema modeled after mmmray/xray-online's generated schema style and official Xray docs.",
+  "$ref": "#/definitions/Basic Configuration Modules",
+  "definitions": {
+    "Basic Configuration Modules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "$ref": "#/definitions/VersionObject"
+        },
+        "log": {
+          "$ref": "#/definitions/LogObject"
+        },
+        "api": {
+          "type": "object"
+        },
+        "dns": {
+          "$ref": "#/definitions/DnsObject"
+        },
+        "routing": {
+          "$ref": "#/definitions/RoutingObject"
+        },
+        "policy": {
+          "type": "object"
+        },
+        "inbounds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/InboundObject"
+          }
+        },
+        "outbounds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OutboundObject"
+          },
+          "minItems": 1
+        },
+        "transport": {
+          "$ref": "#/definitions/TransportObject"
+        },
+        "stats": {
+          "type": "object"
+        },
+        "reverse": {
+          "type": "object"
+        },
+        "fakedns": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "metrics": {
+          "type": "object"
+        },
+        "observatory": {
+          "type": "object"
+        },
+        "burstObservatory": {
+          "type": "object"
+        }
+      }
+    },
+    "VersionObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min": {
+          "type": "string",
+          "description": "Minimum supported Xray version, e.g. 25.8.3"
+        },
+        "max": {
+          "type": "string",
+          "description": "Maximum supported Xray version"
+        }
+      }
+    },
+    "LogObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "access": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        },
+        "dnsLog": {
+          "type": "boolean"
+        },
+        "maskAddress": {
+          "type": "string"
+        },
+        "loglevel": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warning",
+            "error",
+            "none"
+          ]
+        }
+      }
+    },
+    "DnsObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "hosts": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        },
+        "servers": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/definitions/DnsServerObject"
+              }
+            ]
+          }
+        },
+        "clientIp": {
+          "type": "string"
+        },
+        "queryStrategy": {
+          "type": "string",
+          "enum": [
+            "UseIP",
+            "UseIPv4",
+            "UseIPv6",
+            "UseSystem"
+          ]
+        },
+        "disableCache": {
+          "type": "boolean"
+        },
+        "disableFallback": {
+          "type": "boolean"
+        },
+        "disableFallbackIfMatch": {
+          "type": "boolean"
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "DnsServerObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "expectIPs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "skipFallback": {
+          "type": "boolean"
+        },
+        "clientIP": {
+          "type": "string"
+        },
+        "queryStrategy": {
+          "type": "string",
+          "enum": [
+            "UseIP",
+            "UseIPv4",
+            "UseIPv6",
+            "UseSystem"
+          ]
+        }
+      },
+      "required": [
+        "address"
+      ]
+    },
+    "RoutingObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domainStrategy": {
+          "type": "string",
+          "enum": [
+            "AsIs",
+            "IPIfNonMatch",
+            "IPOnDemand"
+          ]
+        },
+        "domainMatcher": {
+          "type": "string",
+          "enum": [
+            "hybrid",
+            "linear"
+          ]
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RuleObject"
+          }
+        },
+        "balancers": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "settings": {
+          "type": "object"
+        }
+      }
+    },
+    "RuleObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "field",
+            "chinaip"
+          ]
+        },
+        "domain": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ip": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "port": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "sourcePort": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "network": {
+          "type": "string",
+          "enum": [
+            "tcp",
+            "udp",
+            "tcp,udp"
+          ]
+        },
+        "source": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "user": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "inboundTag": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "protocol": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "attrs": {
+          "type": "string"
+        },
+        "outboundTag": {
+          "type": "string"
+        },
+        "balancerTag": {
+          "type": "string"
+        },
+        "domainMatcher": {
+          "type": "string",
+          "enum": [
+            "hybrid",
+            "linear"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "InboundObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "listen": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "dokodemo-door",
+            "http",
+            "shadowsocks",
+            "socks",
+            "mixed",
+            "vless",
+            "vmess",
+            "trojan",
+            "wireguard",
+            "hysteria",
+            "tun"
+          ]
+        },
+        "settings": {
+          "$ref": "#/definitions/InboundConfigurationObject"
+        },
+        "streamSettings": {
+          "$ref": "#/definitions/StreamSettingsObject"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "sniffing": {
+          "$ref": "#/definitions/SniffingObject"
+        },
+        "allocate": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "port",
+        "protocol"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "socks"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/SocksInboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "mixed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/SocksInboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "http"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/HttpInboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "dokodemo-door"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/DokodemoDoorInboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "vless"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/VLESSInboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "vmess"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/VMessInboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "trojan"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/TrojanInboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "shadowsocks"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/ShadowsocksInboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "wireguard"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/WireGuardInboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "tun"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/TunInboundConfigurationObject"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "OutboundObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sendThrough": {
+          "type": "string"
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "blackhole",
+            "dns",
+            "freedom",
+            "http",
+            "loopback",
+            "shadowsocks",
+            "socks",
+            "trojan",
+            "vless",
+            "vmess",
+            "hysteria",
+            "wireguard"
+          ]
+        },
+        "settings": {
+          "$ref": "#/definitions/OutboundConfigurationObject"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "streamSettings": {
+          "$ref": "#/definitions/StreamSettingsObject"
+        },
+        "proxySettings": {
+          "$ref": "#/definitions/ProxySettingsObject"
+        },
+        "mux": {
+          "$ref": "#/definitions/MuxObject"
+        },
+        "targetStrategy": {
+          "type": "string",
+          "enum": [
+            "AsIs",
+            "UseIP",
+            "UseIPv4",
+            "UseIPv6",
+            "ForceIP",
+            "ForceIPv4",
+            "ForceIPv6"
+          ]
+        }
+      },
+      "required": [
+        "protocol"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "freedom"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/FreedomOutboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "blackhole"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/BlackholeOutboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "dns"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/DnsOutboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "socks"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/SocksOutboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "http"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/HttpOutboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "vless"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/VLESSOutboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "vmess"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/VMessOutboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "trojan"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/TrojanOutboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "shadowsocks"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/ShadowsocksOutboundConfigurationObject"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "wireguard"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/WireGuardOutboundConfigurationObject"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ProxySettingsObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "type": "string"
+        },
+        "transportLayer": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "tag"
+      ]
+    },
+    "MuxObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "concurrency": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "xudpConcurrency": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "xudpProxyUDP443": {
+          "type": "string",
+          "enum": [
+            "reject",
+            "allow",
+            "skip"
+          ]
+        },
+        "padding": {
+          "type": "boolean"
+        }
+      }
+    },
+    "SniffingObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "destOverride": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "http",
+              "tls",
+              "quic",
+              "fakedns"
+            ]
+          }
+        },
+        "metadataOnly": {
+          "type": "boolean"
+        },
+        "domainsExcluded": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "routeOnly": {
+          "type": "boolean"
+        }
+      }
+    },
+    "StreamSettingsObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "network": {
+          "type": "string",
+          "enum": [
+            "raw",
+            "tcp",
+            "xhttp",
+            "splithttp",
+            "kcp",
+            "grpc",
+            "ws",
+            "httpupgrade",
+            "hysteria"
+          ]
+        },
+        "security": {
+          "type": "string",
+          "enum": [
+            "none",
+            "tls",
+            "reality"
+          ]
+        },
+        "tlsSettings": {
+          "$ref": "#/definitions/TLSObject"
+        },
+        "realitySettings": {
+          "$ref": "#/definitions/RealityObject"
+        },
+        "rawSettings": {
+          "$ref": "#/definitions/RawObject"
+        },
+        "xhttpSettings": {
+          "$ref": "#/definitions/XHTTPObject"
+        },
+        "kcpSettings": {
+          "type": "object"
+        },
+        "grpcSettings": {
+          "$ref": "#/definitions/GrpcObject"
+        },
+        "wsSettings": {
+          "$ref": "#/definitions/WsObject"
+        },
+        "httpupgradeSettings": {
+          "$ref": "#/definitions/HttpUpgradeObject"
+        },
+        "hysteriaSettings": {
+          "type": "object"
+        },
+        "sockopt": {
+          "$ref": "#/definitions/SockoptObject"
+        }
+      }
+    },
+    "TransportObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "network": {
+          "type": "string",
+          "enum": [
+            "raw",
+            "tcp",
+            "xhttp",
+            "splithttp",
+            "kcp",
+            "grpc",
+            "ws",
+            "httpupgrade",
+            "hysteria"
+          ]
+        },
+        "security": {
+          "type": "string",
+          "enum": [
+            "none",
+            "tls",
+            "reality"
+          ]
+        },
+        "tlsSettings": {
+          "$ref": "#/definitions/TLSObject"
+        },
+        "realitySettings": {
+          "$ref": "#/definitions/RealityObject"
+        },
+        "rawSettings": {
+          "$ref": "#/definitions/RawObject"
+        },
+        "xhttpSettings": {
+          "$ref": "#/definitions/XHTTPObject"
+        },
+        "kcpSettings": {
+          "type": "object"
+        },
+        "grpcSettings": {
+          "$ref": "#/definitions/GrpcObject"
+        },
+        "wsSettings": {
+          "$ref": "#/definitions/WsObject"
+        },
+        "httpupgradeSettings": {
+          "$ref": "#/definitions/HttpUpgradeObject"
+        },
+        "hysteriaSettings": {
+          "type": "object"
+        },
+        "sockopt": {
+          "$ref": "#/definitions/SockoptObject"
+        }
+      }
+    },
+    "TLSObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "serverName": {
+          "type": "string"
+        },
+        "verifyPeerCertByName": {
+          "type": "string"
+        },
+        "rejectUnknownSni": {
+          "type": "boolean"
+        },
+        "allowInsecure": {
+          "type": "boolean"
+        },
+        "alpn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "minVersion": {
+          "type": "string"
+        },
+        "maxVersion": {
+          "type": "string"
+        },
+        "cipherSuites": {
+          "type": "string"
+        },
+        "certificates": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "disableSystemRoot": {
+          "type": "boolean"
+        },
+        "enableSessionResumption": {
+          "type": "boolean"
+        },
+        "fingerprint": {
+          "type": "string"
+        },
+        "pinnedPeerCertSha256": {
+          "type": "string"
+        },
+        "curvePreferences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "masterKeyLog": {
+          "type": "string"
+        },
+        "echServerKeys": {
+          "type": "string"
+        },
+        "echConfigList": {
+          "type": "string"
+        },
+        "echForceQuery": {
+          "type": "string"
+        },
+        "echSockopt": {
+          "type": "object"
+        }
+      }
+    },
+    "RealityObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "show": {
+          "type": "boolean"
+        },
+        "target": {
+          "type": "string"
+        },
+        "serverNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "privateKey": {
+          "type": "string"
+        },
+        "minClientVer": {
+          "type": "string"
+        },
+        "maxClientVer": {
+          "type": "string"
+        },
+        "maxTimeDiff": {
+          "type": "integer"
+        },
+        "shortIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fingerprint": {
+          "type": "string"
+        },
+        "serverName": {
+          "type": "string"
+        },
+        "publicKey": {
+          "type": "string"
+        },
+        "shortId": {
+          "type": "string"
+        },
+        "spiderX": {
+          "type": "string"
+        },
+        "mldsa65Seed": {
+          "type": "string"
+        }
+      }
+    },
+    "RawObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "acceptProxyProtocol": {
+          "type": "boolean"
+        },
+        "header": {
+          "type": "object"
+        }
+      }
+    },
+    "WsObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "maxEarlyData": {
+          "type": "integer"
+        },
+        "earlyDataHeaderName": {
+          "type": "string"
+        },
+        "acceptProxyProtocol": {
+          "type": "boolean"
+        },
+        "useBrowserForwarding": {
+          "type": "boolean"
+        }
+      }
+    },
+    "GrpcObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "serviceName": {
+          "type": "string"
+        },
+        "authority": {
+          "type": "string"
+        },
+        "multiMode": {
+          "type": "boolean"
+        },
+        "idle_timeout": {
+          "type": "integer"
+        },
+        "health_check_timeout": {
+          "type": "integer"
+        },
+        "permit_without_stream": {
+          "type": "boolean"
+        },
+        "initial_windows_size": {
+          "type": "integer"
+        },
+        "user_agent": {
+          "type": "string"
+        }
+      }
+    },
+    "HttpUpgradeObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "XHTTPObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "host": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "packet-up",
+            "stream-up",
+            "stream-one"
+          ]
+        },
+        "extra": {
+          "type": "object"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "noSSEHeader": {
+          "type": "boolean"
+        },
+        "noGRPCHeader": {
+          "type": "boolean"
+        },
+        "scMaxEachPostBytes": {
+          "type": "integer"
+        },
+        "scMinPostsIntervalMs": {
+          "type": "integer"
+        },
+        "xPaddingBytes": {
+          "type": "string"
+        },
+        "downloadSettings": {
+          "type": "object"
+        }
+      }
+    },
+    "SockoptObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mark": {
+          "type": "integer"
+        },
+        "tcpFastOpen": {
+          "type": "boolean"
+        },
+        "tproxy": {
+          "type": "string",
+          "enum": [
+            "off",
+            "redirect",
+            "tproxy"
+          ]
+        },
+        "tcpKeepAliveInterval": {
+          "type": "integer"
+        },
+        "tcpKeepAliveIdle": {
+          "type": "integer"
+        },
+        "tcpUserTimeout": {
+          "type": "integer"
+        },
+        "bindToDevice": {
+          "type": "string"
+        },
+        "interface": {
+          "type": "string"
+        },
+        "v6only": {
+          "type": "boolean"
+        },
+        "domainStrategy": {
+          "type": "string",
+          "enum": [
+            "AsIs",
+            "UseIP",
+            "UseIPv4",
+            "UseIPv6"
+          ]
+        },
+        "dialerProxy": {
+          "type": "string"
+        },
+        "tcpMptcp": {
+          "type": "boolean"
+        }
+      }
+    },
+    "InboundConfigurationObject": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/SocksInboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/HttpInboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/DokodemoDoorInboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/VLESSInboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/VMessInboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/TrojanInboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/ShadowsocksInboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/WireGuardInboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/HysteriaInboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/TunInboundConfigurationObject"
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "SocksInboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "auth": {
+          "type": "string",
+          "enum": [
+            "noauth",
+            "password"
+          ]
+        },
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AccountObject"
+          }
+        },
+        "udp": {
+          "type": "boolean"
+        },
+        "ip": {
+          "type": "string"
+        },
+        "userLevel": {
+          "type": "integer"
+        }
+      }
+    },
+    "HttpInboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timeout": {
+          "type": "integer"
+        },
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AccountObject"
+          }
+        },
+        "allowTransparent": {
+          "type": "boolean"
+        },
+        "userLevel": {
+          "type": "integer"
+        }
+      }
+    },
+    "DokodemoDoorInboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "network": {
+          "type": "string",
+          "enum": [
+            "tcp",
+            "udp",
+            "tcp,udp"
+          ]
+        },
+        "followRedirect": {
+          "type": "boolean"
+        },
+        "userLevel": {
+          "type": "integer"
+        }
+      }
+    },
+    "VLESSInboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clients": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VLESSUserObject"
+          }
+        },
+        "decryption": {
+          "type": "string"
+        },
+        "fallbacks": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "VMessInboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clients": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VMessUserObject"
+          }
+        },
+        "disableInsecureEncryption": {
+          "type": "boolean"
+        },
+        "detour": {
+          "type": "object"
+        }
+      }
+    },
+    "TrojanInboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clients": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TrojanUserObject"
+          }
+        },
+        "fallbacks": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "ShadowsocksInboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "network": {
+          "type": "string"
+        },
+        "users": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "ivCheck": {
+          "type": "boolean"
+        }
+      }
+    },
+    "WireGuardInboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "secretKey": {
+          "type": "string"
+        },
+        "address": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mtu": {
+          "type": "integer"
+        },
+        "workers": {
+          "type": "integer"
+        },
+        "reserved": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "peers": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "HysteriaInboundConfigurationObject": {
+      "type": "object"
+    },
+    "TunInboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "mtu": {
+          "type": "integer"
+        },
+        "userLevel": {
+          "type": "integer"
+        }
+      }
+    },
+    "OutboundConfigurationObject": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/FreedomOutboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/BlackholeOutboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/DnsOutboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/SocksOutboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/HttpOutboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/VLESSOutboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/VMessOutboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/TrojanOutboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/ShadowsocksOutboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/WireGuardOutboundConfigurationObject"
+        },
+        {
+          "$ref": "#/definitions/HysteriaOutboundConfigurationObject"
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "FreedomOutboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domainStrategy": {
+          "type": "string",
+          "enum": [
+            "AsIs",
+            "UseIP",
+            "UseIPv4",
+            "UseIPv6",
+            "ForceIP",
+            "ForceIPv4",
+            "ForceIPv6"
+          ]
+        },
+        "redirect": {
+          "type": "string"
+        },
+        "userLevel": {
+          "type": "integer"
+        },
+        "fragment": {
+          "type": "object"
+        },
+        "noises": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "BlackholeOutboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "response": {
+          "type": "object"
+        }
+      }
+    },
+    "DnsOutboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "network": {
+          "type": "string",
+          "enum": [
+            "tcp",
+            "udp"
+          ]
+        },
+        "address": {
+          "type": "string"
+        }
+      }
+    },
+    "SocksOutboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "servers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SocksServerObject"
+          }
+        }
+      },
+      "required": [
+        "servers"
+      ]
+    },
+    "HttpOutboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "servers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HttpServerObject"
+          }
+        }
+      },
+      "required": [
+        "servers"
+      ]
+    },
+    "VLESSOutboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "vnext": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VNextObject"
+          }
+        }
+      },
+      "required": [
+        "vnext"
+      ]
+    },
+    "VMessOutboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "vnext": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VNextObject"
+          }
+        }
+      },
+      "required": [
+        "vnext"
+      ]
+    },
+    "TrojanOutboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "servers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TrojanServerObject"
+          }
+        }
+      },
+      "required": [
+        "servers"
+      ]
+    },
+    "ShadowsocksOutboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "servers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ShadowsocksServerObject"
+          }
+        }
+      },
+      "required": [
+        "servers"
+      ]
+    },
+    "WireGuardOutboundConfigurationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "secretKey": {
+          "type": "string"
+        },
+        "address": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "peers": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "mtu": {
+          "type": "integer"
+        },
+        "workers": {
+          "type": "integer"
+        },
+        "reserved": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "domainStrategy": {
+          "type": "string",
+          "enum": [
+            "ForceIP",
+            "ForceIPv4",
+            "ForceIPv6",
+            "UseIP"
+          ]
+        },
+        "noKernelTun": {
+          "type": "boolean"
+        }
+      }
+    },
+    "HysteriaOutboundConfigurationObject": {
+      "type": "object"
+    },
+    "AccountObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "user": {
+          "type": "string"
+        },
+        "pass": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "user",
+        "pass"
+      ]
+    },
+    "VLESSUserObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "level": {
+          "type": "integer"
+        },
+        "flow": {
+          "type": "string"
+        },
+        "encryption": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "VMessUserObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "alterId": {
+          "type": "integer"
+        },
+        "security": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "level": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "TrojanUserObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "password": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "level": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "password"
+      ]
+    },
+    "VNextObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "users": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/VLESSUserObject"
+              },
+              {
+                "$ref": "#/definitions/VMessUserObject"
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "address",
+        "port",
+        "users"
+      ]
+    },
+    "SocksServerObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "users": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AccountObject"
+          }
+        }
+      },
+      "required": [
+        "address",
+        "port"
+      ]
+    },
+    "HttpServerObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "users": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AccountObject"
+          }
+        }
+      },
+      "required": [
+        "address",
+        "port"
+      ]
+    },
+    "TrojanServerObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "password": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "level": {
+          "type": "integer"
+        },
+        "flow": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "address",
+        "port",
+        "password"
+      ]
+    },
+    "ShadowsocksServerObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "method": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "uot": {
+          "type": "boolean"
+        },
+        "level": {
+          "type": "integer"
+        },
+        "email": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "address",
+        "port",
+        "method",
+        "password"
+      ]
+    }
+  }
+}
