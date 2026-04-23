@@ -13,9 +13,9 @@ import type { FormContextType, ObjectFieldTemplateProps, RJSFSchema, StrictRJSFS
 import { buttonId, canExpand } from '@rjsf/utils';
 
 export default function CollapsibleObjectFieldTemplate<
-  T = unknown,
+  T = any,
   S extends StrictRJSFSchema = RJSFSchema,
-  F extends FormContextType = unknown,
+  F extends FormContextType = any,
 >(props: ObjectFieldTemplateProps<T, S, F>) {
   const {
     description,
