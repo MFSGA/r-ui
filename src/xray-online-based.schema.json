@@ -372,7 +372,7 @@
           ]
         },
         "settings": {
-          "$ref": "#/definitions/InboundConfigurationObject"
+          "type": "object"
         },
         "streamSettings": {
           "$ref": "#/definitions/StreamSettingsObject"
@@ -540,6 +540,36 @@
           "if": {
             "properties": {
               "protocol": {
+                "const": "hysteria"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/HysteriaInboundConfigurationObject"
+              },
+              "streamSettings": {
+                "type": "object",
+                "properties": {
+                  "network": {
+                    "const": "hysteria"
+                  }
+                },
+                "required": [
+                  "network"
+                ]
+              }
+            },
+            "required": [
+              "streamSettings"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
                 "const": "tun"
               }
             }
@@ -579,7 +609,7 @@
           ]
         },
         "settings": {
-          "$ref": "#/definitions/OutboundConfigurationObject"
+          "type": "object"
         },
         "tag": {
           "type": "string"
@@ -769,6 +799,36 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "protocol": {
+                "const": "hysteria"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "settings": {
+                "$ref": "#/definitions/HysteriaOutboundConfigurationObject"
+              },
+              "streamSettings": {
+                "type": "object",
+                "properties": {
+                  "network": {
+                    "const": "hysteria"
+                  }
+                },
+                "required": [
+                  "network"
+                ]
+              }
+            },
+            "required": [
+              "streamSettings"
+            ]
+          }
         }
       ]
     },
@@ -899,7 +959,13 @@
           "$ref": "#/definitions/HttpUpgradeObject"
         },
         "hysteriaSettings": {
-          "type": "object"
+          "$ref": "#/definitions/HysteriaSettingsObject"
+        },
+        "udpmasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/UdpMaskObject"
+          }
         },
         "sockopt": {
           "$ref": "#/definitions/SockoptObject"
@@ -957,7 +1023,13 @@
           "$ref": "#/definitions/HttpUpgradeObject"
         },
         "hysteriaSettings": {
-          "type": "object"
+          "$ref": "#/definitions/HysteriaSettingsObject"
+        },
+        "udpmasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/UdpMaskObject"
+          }
         },
         "sockopt": {
           "$ref": "#/definitions/SockoptObject"
@@ -998,7 +1070,7 @@
         "certificates": {
           "type": "array",
           "items": {
-            "type": "object"
+            "$ref": "#/definitions/TLSCertificateObject"
           }
         },
         "disableSystemRoot": {
@@ -1033,6 +1105,120 @@
         },
         "echSockopt": {
           "type": "object"
+        }
+      }
+    },
+    "TLSCertificateObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "certificateFile": {
+          "type": "string"
+        },
+        "keyFile": {
+          "type": "string"
+        },
+        "certificate": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "key": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "usage": {
+          "type": "string"
+        },
+        "ocspStapling": {
+          "type": "integer"
+        },
+        "oneTimeLoading": {
+          "type": "boolean"
+        },
+        "buildChain": {
+          "type": "boolean"
+        }
+      }
+    },
+    "TLScertificateObject": {
+      "$ref": "#/definitions/TLSCertificateObject"
+    },
+    "HysteriaSettingsObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "integer",
+          "enum": [
+            1,
+            2
+          ]
+        },
+        "congestion": {
+          "type": "string"
+        },
+        "up": {
+          "type": "string"
+        },
+        "down": {
+          "type": "string"
+        },
+        "udphop": {
+          "$ref": "#/definitions/HysteriaUdpHopObject"
+        },
+        "ignoreClientBandwidth": {
+          "type": "boolean"
+        }
+      }
+    },
+    "HysteriaUdpHopObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "port": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "interval": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "UdpMaskObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "salamander"
+          ]
+        },
+        "settings": {
+          "$ref": "#/definitions/UdpMaskSettingsObject"
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "UdpMaskSettingsObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "password": {
+          "type": "string"
         }
       }
     },
@@ -1281,43 +1467,62 @@
     "InboundConfigurationObject": {
       "anyOf": [
         {
+          "title": "socks / mixed",
           "$ref": "#/definitions/SocksInboundConfigurationObject"
         },
         {
+          "title": "http",
           "$ref": "#/definitions/HttpInboundConfigurationObject"
         },
         {
+          "title": "dokodemo-door",
           "$ref": "#/definitions/DokodemoDoorInboundConfigurationObject"
         },
         {
+          "title": "vless",
           "$ref": "#/definitions/VLESSInboundConfigurationObject"
         },
         {
+          "title": "vmess",
           "$ref": "#/definitions/VMessInboundConfigurationObject"
         },
         {
+          "title": "trojan",
           "$ref": "#/definitions/TrojanInboundConfigurationObject"
         },
         {
+          "title": "shadowsocks",
           "$ref": "#/definitions/ShadowsocksInboundConfigurationObject"
         },
         {
+          "title": "wireguard",
           "$ref": "#/definitions/WireGuardInboundConfigurationObject"
         },
         {
+          "title": "hysteria",
           "$ref": "#/definitions/HysteriaInboundConfigurationObject"
         },
         {
+          "title": "tun",
           "$ref": "#/definitions/TunInboundConfigurationObject"
         },
         {
+          "title": "custom object",
           "type": "object"
         }
       ]
     },
     "SocksInboundConfigurationObject": {
       "type": "object",
-      "additionalProperties": false,
+      "propertyNames": {
+        "enum": [
+          "auth",
+          "accounts",
+          "udp",
+          "ip",
+          "userLevel"
+        ]
+      },
       "properties": {
         "auth": {
           "type": "string",
@@ -1325,12 +1530,6 @@
             "noauth",
             "password"
           ]
-        },
-        "accounts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/AccountObject"
-          }
         },
         "udp": {
           "type": "boolean"
@@ -1340,6 +1539,43 @@
         },
         "userLevel": {
           "type": "integer"
+        }
+      },
+      "dependencies": {
+        "auth": {
+          "oneOf": [
+            {
+              "title": "noauth",
+              "properties": {
+                "auth": {
+                  "enum": [
+                    "noauth"
+                  ]
+                }
+              },
+              "not": {
+                "required": [
+                  "accounts"
+                ]
+              }
+            },
+            {
+              "title": "password",
+              "properties": {
+                "auth": {
+                  "enum": [
+                    "password"
+                  ]
+                },
+                "accounts": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/AccountObject"
+                  }
+                }
+              }
+            }
+          ]
         }
       }
     },
@@ -1507,7 +1743,34 @@
       }
     },
     "HysteriaInboundConfigurationObject": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clients": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HysteriaInboundClientObject"
+          }
+        }
+      }
+    },
+    "HysteriaInboundClientObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "level": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id"
+      ]
     },
     "TunInboundConfigurationObject": {
       "type": "object",
@@ -1527,39 +1790,51 @@
     "OutboundConfigurationObject": {
       "anyOf": [
         {
+          "title": "freedom",
           "$ref": "#/definitions/FreedomOutboundConfigurationObject"
         },
         {
+          "title": "blackhole",
           "$ref": "#/definitions/BlackholeOutboundConfigurationObject"
         },
         {
+          "title": "dns",
           "$ref": "#/definitions/DnsOutboundConfigurationObject"
         },
         {
+          "title": "socks",
           "$ref": "#/definitions/SocksOutboundConfigurationObject"
         },
         {
+          "title": "http",
           "$ref": "#/definitions/HttpOutboundConfigurationObject"
         },
         {
+          "title": "vless",
           "$ref": "#/definitions/VLESSOutboundConfigurationObject"
         },
         {
+          "title": "vmess",
           "$ref": "#/definitions/VMessOutboundConfigurationObject"
         },
         {
+          "title": "trojan",
           "$ref": "#/definitions/TrojanOutboundConfigurationObject"
         },
         {
+          "title": "shadowsocks",
           "$ref": "#/definitions/ShadowsocksOutboundConfigurationObject"
         },
         {
+          "title": "wireguard",
           "$ref": "#/definitions/WireGuardOutboundConfigurationObject"
         },
         {
+          "title": "hysteria",
           "$ref": "#/definitions/HysteriaOutboundConfigurationObject"
         },
         {
+          "title": "custom object",
           "type": "object"
         }
       ]

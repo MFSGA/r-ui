@@ -25,6 +25,7 @@ import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import CollapsibleObjectFieldTemplate from './CollapsibleObjectFieldTemplate';
+import PlaceholderBaseInputTemplate from './PlaceholderBaseInputTemplate';
 import type { XrayConfig } from './schema';
 import {
   defaultConfig,
@@ -65,6 +66,7 @@ export default function App() {
   const selectedFieldValue = config[selectedField];
   const templates = useMemo(
     () => ({
+      BaseInputTemplate: PlaceholderBaseInputTemplate,
       ObjectFieldTemplate: CollapsibleObjectFieldTemplate,
     }),
     [],
