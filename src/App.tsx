@@ -3,6 +3,9 @@ import type { ChangeEvent } from 'react';
 import Form from '@rjsf/mui';
 import validator from '@rjsf/validator-ajv8';
 import type { IChangeEvent } from '@rjsf/core';
+import JSON5 from 'json5';
+import TOML from '@iarna/toml';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import {
   Alert,
   Box,
@@ -40,19 +43,91 @@ import {
 } from './schema';
 import { localeOptions, useI18n } from './i18n';
 
+type ConfigFormat = 'json' | 'json5' | 'yaml' | 'toml';
+
+const configFormatOptions: Array<{ value: ConfigFormat; labelKey: string }> = [
+  { value: 'json', labelKey: 'app.format.json' },
+  { value: 'json5', labelKey: 'app.format.json5' },
+  { value: 'yaml', labelKey: 'app.format.yaml' },
+  { value: 'toml', labelKey: 'app.format.toml' },
+];
+
 function createDefaultConfig() {
   return orderXrayConfig(structuredClone(defaultConfig));
 }
 
 const initialSelectedField = topLevelFields.includes('inbounds') ? 'inbounds' : topLevelFields[0];
 
-function downloadJsonFile(config: XrayConfig) {
-  const content = JSON.stringify(orderXrayConfig(config), null, 2);
-  const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function detectConfigFormat(fileName: string): ConfigFormat | null {
+  const lowerName = fileName.toLowerCase();
+
+  if (lowerName.endsWith('.json5')) {
+    return 'json5';
+  }
+
+  if (lowerName.endsWith('.yaml') || lowerName.endsWith('.yml')) {
+    return 'yaml';
+  }
+
+  if (lowerName.endsWith('.toml')) {
+    return 'toml';
+  }
+
+  if (lowerName.endsWith('.json')) {
+    return 'json';
+  }
+
+  return null;
+}
+
+function parseConfigText(text: string, format: ConfigFormat) {
+  switch (format) {
+    case 'json':
+      return JSON.parse(text) as unknown;
+    case 'json5':
+      return JSON5.parse(text) as unknown;
+    case 'yaml':
+      return parseYaml(text) as unknown;
+    case 'toml':
+      return TOML.parse(text) as unknown;
+  }
+}
+
+function serializeConfigText(config: XrayConfig, format: ConfigFormat) {
+  const ordered = orderXrayConfig(config);
+
+  switch (format) {
+    case 'json':
+      return JSON.stringify(ordered, null, 2);
+    case 'json5':
+      return JSON5.stringify(ordered, null, 2);
+    case 'yaml':
+      return stringifyYaml(ordered, { lineWidth: 0 });
+    case 'toml':
+      return TOML.stringify(ordered as any);
+  }
+}
+
+function downloadConfigFile(config: XrayConfig, format: ConfigFormat) {
+  const content = serializeConfigText(config, format);
+  const mimeType =
+    format === 'json'
+      ? 'application/json;charset=utf-8'
+      : format === 'json5'
+        ? 'application/json5;charset=utf-8'
+        : format === 'yaml'
+          ? 'application/yaml;charset=utf-8'
+          : 'application/toml;charset=utf-8';
+  const extension = format === 'json' ? 'json' : format;
+  const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = 'xray-config.json';
+  anchor.download = `xray-config.${extension}`;
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -65,9 +140,10 @@ export default function App() {
   const { locale, setLocale, t, translateString, transformValidationErrors } = useI18n();
   const [config, setConfig] = useState<XrayConfig>(() => createDefaultConfig());
   const [selectedField, setSelectedField] = useState(() => findInitialSelectedField(createDefaultConfig()));
+  const [configFormat, setConfigFormat] = useState<ConfigFormat>('json');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isFullJsonOpen, setIsFullJsonOpen] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
+  const [operationError, setOperationError] = useState<string | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const orderedConfig = useMemo(() => orderXrayConfig(config), [config]);
@@ -137,6 +213,7 @@ export default function App() {
       }),
     );
     setIsSubmitted(false);
+    setOperationError(null);
   };
 
   const handleImportClick = () => {
@@ -153,20 +230,40 @@ export default function App() {
 
     try {
       const text = await file.text();
-      const parsed = JSON.parse(text) as unknown;
+      const detectedFormat = detectConfigFormat(file.name);
+      const parseOrder = Array.from(
+        new Set([detectedFormat, configFormat, 'json', 'json5', 'yaml', 'toml'].filter(Boolean) as ConfigFormat[]),
+      );
+      let parsed: unknown = null;
+      let parsedSuccessfully = false;
+      let resolvedFormat: ConfigFormat | null = null;
 
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        setImportError(t('app.importInvalidFormat'));
+      for (const format of parseOrder) {
+        try {
+          parsed = parseConfigText(text, format);
+          parsedSuccessfully = true;
+          resolvedFormat = format;
+          break;
+        } catch {
+          // Try the next supported format.
+        }
+      }
+
+      if (!parsedSuccessfully || !isPlainObject(parsed)) {
+        setOperationError(t('app.importParseFailed'));
         return;
       }
 
       const importedConfig = orderXrayConfig(parsed as XrayConfig);
       setConfig(importedConfig);
       setSelectedField(findInitialSelectedField(importedConfig));
-      setImportError(null);
+      if (resolvedFormat) {
+        setConfigFormat(resolvedFormat);
+      }
+      setOperationError(null);
       setIsSubmitted(false);
     } catch {
-      setImportError(t('app.importParseFailed'));
+      setOperationError(t('app.importParseFailed'));
     }
   };
 
@@ -232,6 +329,22 @@ export default function App() {
                   </FormControl>
 
                   <FormControl sx={{ minWidth: 160 }}>
+                    <InputLabel id="config-format-label">{t('app.configFormat')}</InputLabel>
+                    <Select
+                      labelId="config-format-label"
+                      label={t('app.configFormat')}
+                      value={configFormat}
+                      onChange={(event) => setConfigFormat(event.target.value as ConfigFormat)}
+                    >
+                      {configFormatOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {t(option.labelKey)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl sx={{ minWidth: 160 }}>
                     <InputLabel id="locale-label">{t('app.language')}</InputLabel>
                     <Select
                       labelId="locale-label"
@@ -249,6 +362,10 @@ export default function App() {
                 </Stack>
 
                 <Divider />
+
+                <Typography variant="body2" color="text.secondary">
+                  {t('app.importHint')}
+                </Typography>
 
                 <Form
                   key={`${selectedField}-${locale}`}
@@ -272,17 +389,24 @@ export default function App() {
                       {t('app.saveModule')}
                     </Button>
                     <Button variant="outlined" onClick={handleImportClick}>
-                      {t('app.importJson')}
+                      {t('app.importConfig')}
                     </Button>
                     <Button variant="outlined" onClick={handleReset} startIcon={<ReplayRoundedIcon />}>
                       {t('app.resetModule')}
                     </Button>
                     <Button
                       variant="text"
-                      onClick={() => downloadJsonFile(config)}
+                      onClick={() => {
+                        try {
+                          downloadConfigFile(config, configFormat);
+                          setOperationError(null);
+                        } catch {
+                          setOperationError(t('app.exportFailed'));
+                        }
+                      }}
                       startIcon={<DownloadRoundedIcon />}
                     >
-                      {t('app.downloadFullJson')}
+                      {t('app.downloadConfig')}
                     </Button>
                   </Stack>
                 </Form>
@@ -310,7 +434,7 @@ export default function App() {
                   {t('app.showFullJson')}
                 </Button>
 
-                {importError ? <Alert severity="error">{importError}</Alert> : null}
+                {operationError ? <Alert severity="error">{operationError}</Alert> : null}
 
                 <Box
                   component="pre"
@@ -353,8 +477,18 @@ export default function App() {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => downloadJsonFile(config)} startIcon={<DownloadRoundedIcon />}>
-            导出完整 JSON
+          <Button
+            onClick={() => {
+              try {
+                downloadConfigFile(config, configFormat);
+                setOperationError(null);
+              } catch {
+                setOperationError(t('app.exportFailed'));
+              }
+            }}
+            startIcon={<DownloadRoundedIcon />}
+          >
+            {t('app.downloadConfig')}
           </Button>
           <Button variant="contained" onClick={() => setIsFullJsonOpen(false)}>
             关闭
@@ -362,7 +496,14 @@ export default function App() {
         </DialogActions>
       </Dialog>
 
-      <Box component="input" ref={importInputRef} type="file" accept="application/json,.json" sx={{ display: 'none' }} onChange={handleImportFileChange} />
+      <Box
+        component="input"
+        ref={importInputRef}
+        type="file"
+        accept=".json,.json5,.yaml,.yml,.toml,application/json,application/yaml,application/toml,text/plain"
+        sx={{ display: 'none' }}
+        onChange={handleImportFileChange}
+      />
     </Box>
   );
 }
