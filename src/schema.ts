@@ -76,6 +76,60 @@ export function orderXrayConfig(config: XrayConfig): XrayConfig {
   return orderedConfig;
 }
 
+export function normalizeProtocolSwitches(field: XrayConfigKey, nextFormData: unknown, previousFormData: unknown) {
+  if (field !== 'inbounds' && field !== 'outbounds') {
+    return nextFormData;
+  }
+
+  if (!Array.isArray(nextFormData)) {
+    return nextFormData;
+  }
+
+  const previousItems = Array.isArray(previousFormData) ? previousFormData : [];
+
+  return nextFormData.map((nextItem, index) => {
+    const previousItem = previousItems[index];
+
+    if (!isRecord(nextItem)) {
+      return nextItem;
+    }
+
+    const nextProtocol = typeof nextItem.protocol === 'string' ? nextItem.protocol : undefined;
+    const previousProtocol = isRecord(previousItem) && typeof previousItem.protocol === 'string' ? previousItem.protocol : undefined;
+    const protocolChanged = nextProtocol !== undefined && nextProtocol !== previousProtocol;
+
+    if (!protocolChanged) {
+      return nextItem;
+    }
+
+    const normalizedItem: Record<string, unknown> = {
+      ...nextItem,
+      settings: {},
+    };
+
+    if (nextProtocol === 'hysteria') {
+      normalizedItem.streamSettings = {
+        ...(isRecord(nextItem.streamSettings) ? nextItem.streamSettings : {}),
+        network: 'hysteria',
+      };
+    } else if (previousProtocol === 'hysteria' && isRecord(nextItem.streamSettings)) {
+      const nextStreamSettings = { ...nextItem.streamSettings };
+
+      if (nextStreamSettings.network === 'hysteria') {
+        delete nextStreamSettings.network;
+      }
+
+      normalizedItem.streamSettings = nextStreamSettings;
+    }
+
+    return normalizedItem;
+  });
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function orderFields(fields: string[], preferredOrder: string[]) {
   const fieldSet = new Set(fields);
   const orderedFields = preferredOrder.filter((field) => fieldSet.has(field));

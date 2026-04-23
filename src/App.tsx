@@ -31,6 +31,7 @@ import {
   defaultConfig,
   getTopLevelFieldSchema,
   getTopLevelFieldUiSchema,
+  normalizeProtocolSwitches,
   orderXrayConfig,
   topLevelFieldOptions,
   topLevelFields,
@@ -86,21 +87,22 @@ export default function App() {
     setConfig((currentConfig) =>
       orderXrayConfig({
         ...currentConfig,
-        [selectedField]: event.formData,
+        [selectedField]: normalizeProtocolSwitches(selectedField, event.formData, currentConfig[selectedField]),
       }),
     );
     setIsSubmitted(false);
   };
 
   const handleSubmit = ({ formData }: IChangeEvent<unknown>) => {
+    const nextFormData = normalizeProtocolSwitches(selectedField, formData, config[selectedField]);
     const nextConfig = orderXrayConfig({
       ...config,
-      [selectedField]: formData,
+      [selectedField]: nextFormData,
     });
 
     setConfig(nextConfig);
     setIsSubmitted(true);
-    console.log(`提交得到的 Xray ${selectedField} 配置：`, formData);
+    console.log(`提交得到的 Xray ${selectedField} 配置：`, nextFormData);
     console.log('当前完整 Xray JSON 配置：', nextConfig);
   };
 
