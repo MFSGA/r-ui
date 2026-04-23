@@ -7,12 +7,15 @@ import '@fontsource/roboto/700.css';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import App from './App';
 import { appTheme } from './theme';
+import { I18nProvider } from './i18n';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider theme={appTheme}>
       <CssBaseline />
-      <App />
+      <I18nProvider>
+        <App />
+      </I18nProvider>
     </ThemeProvider>
   </React.StrictMode>,
 );

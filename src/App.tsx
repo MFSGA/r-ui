@@ -25,17 +25,19 @@ import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import CollapsibleObjectFieldTemplate from './CollapsibleObjectFieldTemplate';
+import HysteriaAwareSecurityWidget from './HysteriaAwareSecurityWidget';
 import PlaceholderBaseInputTemplate from './PlaceholderBaseInputTemplate';
 import type { XrayConfig } from './schema';
 import {
   defaultConfig,
   getTopLevelFieldSchema,
   getTopLevelFieldUiSchema,
-  normalizeProtocolSwitches,
+  getTopLevelFieldOptions,
+  normalizeSelectedFieldValue,
   orderXrayConfig,
-  topLevelFieldOptions,
   topLevelFields,
 } from './schema';
+import { localeOptions, useI18n } from './i18n';
 
 function createDefaultConfig() {
   return orderXrayConfig(structuredClone(defaultConfig));
@@ -55,6 +57,7 @@ function downloadJsonFile(config: XrayConfig) {
 }
 
 export default function App() {
+  const { locale, setLocale, t, translateString, transformValidationErrors } = useI18n();
   const [config, setConfig] = useState<XrayConfig>(() => createDefaultConfig());
   const [selectedField, setSelectedField] = useState(initialSelectedField);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -62,8 +65,8 @@ export default function App() {
 
   const orderedConfig = useMemo(() => orderXrayConfig(config), [config]);
   const fullJsonPreview = useMemo(() => JSON.stringify(orderedConfig, null, 2), [orderedConfig]);
-  const selectedSchema = useMemo(() => getTopLevelFieldSchema(selectedField), [selectedField]);
-  const selectedUiSchema = useMemo(() => getTopLevelFieldUiSchema(selectedField), [selectedField]);
+  const selectedSchema = useMemo(() => getTopLevelFieldSchema(selectedField, locale), [selectedField, locale]);
+  const selectedUiSchema = useMemo(() => getTopLevelFieldUiSchema(selectedField, locale), [selectedField, locale]);
   const selectedFieldValue = config[selectedField];
   const templates = useMemo(
     () => ({
@@ -82,19 +85,32 @@ export default function App() {
 
     return JSON.stringify(moduleConfig, null, 2);
   }, [selectedField, selectedFieldValue]);
+  const widgets = useMemo(
+    () => ({
+      HysteriaAwareSecurityWidget,
+    }),
+    [],
+  );
+  const formContext = useMemo(
+    () => ({
+      currentData: selectedFieldValue,
+    }),
+    [selectedFieldValue],
+  );
+  const selectedFieldOptions = useMemo(() => getTopLevelFieldOptions(locale), [locale]);
 
   const handleChange = (event: IChangeEvent<unknown>) => {
     setConfig((currentConfig) =>
       orderXrayConfig({
         ...currentConfig,
-        [selectedField]: normalizeProtocolSwitches(selectedField, event.formData, currentConfig[selectedField]),
+        [selectedField]: normalizeSelectedFieldValue(selectedField, event.formData, currentConfig[selectedField]),
       }),
     );
     setIsSubmitted(false);
   };
 
   const handleSubmit = ({ formData }: IChangeEvent<unknown>) => {
-    const nextFormData = normalizeProtocolSwitches(selectedField, formData, config[selectedField]);
+    const nextFormData = normalizeSelectedFieldValue(selectedField, formData, config[selectedField]);
     const nextConfig = orderXrayConfig({
       ...config,
       [selectedField]: nextFormData,
@@ -129,17 +145,17 @@ export default function App() {
         <Stack spacing={3}>
           <Paper sx={{ p: { xs: 3, md: 4 } }} elevation={0}>
             <Stack spacing={2}>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'flex-start', sm: 'center' }}>
-                <Chip label="React + TypeScript + MUI + rjsf" color="primary" variant="outlined" />
-                <Chip label="Xray JSON Schema 驱动" color="secondary" variant="outlined" />
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'flex-start', sm: 'center' }}>
+                <Chip label={t('app.chip.react')} color="primary" variant="outlined" />
+                <Chip label={t('app.chip.schema')} color="secondary" variant="outlined" />
               </Stack>
 
               <Box>
                 <Typography variant="h4" gutterBottom>
-                  Xray 配置生成器
+                  {t('app.title')}
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
-                  左侧表单由 xray-online-based.schema.json 自动生成。填写完成后，可以在右侧实时得到对应的 Xray JSON 配置。
+                  {t('app.subtitle')}
                 </Typography>
               </Box>
             </Stack>
@@ -150,36 +166,54 @@ export default function App() {
               <Stack spacing={2.5}>
                 <Box>
                   <Typography variant="h6" gutterBottom>
-                    配置表单
+                    {t('app.form.title')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    先选择第一级配置模块，再只编辑该模块对应的值；右侧会同步展示完整 Xray JSON。
+                    {t('app.form.subtitle')}
                   </Typography>
                 </Box>
 
-                <FormControl fullWidth>
-                  <InputLabel id="top-level-field-label">第一级配置模块</InputLabel>
-                  <Select
-                    labelId="top-level-field-label"
-                    label="第一级配置模块"
-                    value={selectedField}
-                    onChange={(event) => {
-                      setSelectedField(event.target.value);
-                      setIsSubmitted(false);
-                    }}
-                  >
-                    {topLevelFieldOptions.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                  <FormControl fullWidth>
+                    <InputLabel id="top-level-field-label">{t('app.moduleSelect')}</InputLabel>
+                    <Select
+                      labelId="top-level-field-label"
+                      label={t('app.moduleSelect')}
+                      value={selectedField}
+                      onChange={(event) => {
+                        setSelectedField(String(event.target.value));
+                        setIsSubmitted(false);
+                      }}
+                    >
+                      {selectedFieldOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl sx={{ minWidth: 160 }}>
+                    <InputLabel id="locale-label">{t('app.language')}</InputLabel>
+                    <Select
+                      labelId="locale-label"
+                      label={t('app.language')}
+                      value={locale}
+                      onChange={(event) => setLocale(event.target.value as typeof locale)}
+                    >
+                      {localeOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Stack>
 
                 <Divider />
 
                 <Form
-                  key={selectedField}
+                  key={`${selectedField}-${locale}`}
                   schema={selectedSchema}
                   uiSchema={selectedUiSchema}
                   validator={validator}
@@ -188,22 +222,26 @@ export default function App() {
                   noHtml5Validate
                   showErrorList={false}
                   templates={templates}
+                  widgets={widgets}
+                  formContext={formContext}
+                  translateString={translateString}
+                  transformErrors={transformValidationErrors}
                   onChange={handleChange}
                   onSubmit={handleSubmit}
                 >
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2 }}>
                     <Button type="submit" variant="contained" startIcon={<SaveRoundedIcon />}>
-                      保存当前模块
+                      {t('app.saveModule')}
                     </Button>
                     <Button variant="outlined" onClick={handleReset} startIcon={<ReplayRoundedIcon />}>
-                      重置当前模块
+                      {t('app.resetModule')}
                     </Button>
                     <Button
                       variant="text"
                       onClick={() => downloadJsonFile(config)}
                       startIcon={<DownloadRoundedIcon />}
                     >
-                      导出完整 JSON
+                      {t('app.downloadFullJson')}
                     </Button>
                   </Stack>
                 </Form>
@@ -214,21 +252,21 @@ export default function App() {
               <Stack spacing={2}>
                 <Box>
                   <Typography variant="h6" gutterBottom>
-                    当前模块 JSON
+                    {t('app.module.title')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    这里只展示当前选中的 {selectedField} 模块；完整配置请通过按钮单独查看。
+                    {t('app.module.subtitle', { field: selectedField })}
                   </Typography>
                 </Box>
 
                 {isSubmitted ? (
-                  <Alert severity="success">当前模块已提交，完整 Xray 配置已同步更新。</Alert>
+                  <Alert severity="success">{t('app.module.synced')}</Alert>
                 ) : (
-                  <Alert severity="info">正在实时同步当前模块的 formData，右侧只预览当前模块。</Alert>
+                  <Alert severity="info">{t('app.module.syncing')}</Alert>
                 )}
 
                 <Button variant="outlined" onClick={() => setIsFullJsonOpen(true)}>
-                  查看完整 JSON
+                  {t('app.showFullJson')}
                 </Button>
 
                 <Box
@@ -253,7 +291,7 @@ export default function App() {
       </Container>
 
       <Dialog open={isFullJsonOpen} onClose={() => setIsFullJsonOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>完整 Xray JSON 配置</DialogTitle>
+        <DialogTitle>{t('app.fullJsonTitle')}</DialogTitle>
         <DialogContent dividers>
           <Box
             component="pre"

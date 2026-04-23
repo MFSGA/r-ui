@@ -9,6 +9,7 @@ import Tooltip from '@mui/material/Tooltip';
 import { SchemaExamples } from '@rjsf/core';
 import type { BaseInputTemplateProps, FormContextType, RJSFSchema, StrictRJSFSchema } from '@rjsf/utils';
 import { ariaDescribedByIds, examplesId, getInputProps, labelValue } from '@rjsf/utils';
+import { useI18n } from './i18n';
 
 const TYPES_THAT_SHRINK_LABEL = ['date', 'datetime-local', 'file', 'time'];
 
@@ -17,6 +18,7 @@ export default function PlaceholderBaseInputTemplate<
   S extends StrictRJSFSchema = RJSFSchema,
   F extends FormContextType = any,
 >(props: BaseInputTemplateProps<T, S, F>) {
+  const { t } = useI18n();
   const {
     id,
     htmlName,
@@ -40,6 +42,8 @@ export default function PlaceholderBaseInputTemplate<
     InputLabelProps,
     InputProps,
     slotProps,
+    uiSchema,
+    hideError,
     ...textFieldProps
   } = props;
   const { ClearButton } = registry.templates.ButtonTemplates;
@@ -83,8 +87,8 @@ export default function PlaceholderBaseInputTemplate<
   if (canApplyPlaceholder) {
     endAdornments.push(
       <InputAdornment key="placeholder" position="end">
-        <Tooltip title="应用占位值">
-          <IconButton aria-label="应用占位值" edge="end" size="small" onClick={_onApplyPlaceholder}>
+        <Tooltip title={t('template.applyPlaceholder')}>
+          <IconButton aria-label={t('template.applyPlaceholder')} edge="end" size="small" onClick={_onApplyPlaceholder}>
             <AutoFixHighRoundedIcon fontSize="small" />
           </IconButton>
         </Tooltip>

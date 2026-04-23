@@ -1,6 +1,8 @@
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 import xraySchema from './xray-online-based.schema.json';
 import xrayDefaultConfig from './xray-online-based.config.json';
+import type { Locale } from './i18n';
+import { translateSchemaLabel, translateUiPlaceholder } from './i18n';
 
 export type XrayConfig = Record<string, unknown>;
 export type XrayConfigKey = string;
@@ -37,24 +39,36 @@ export const topLevelFieldOptions = topLevelFields.map((field) => ({
   description: getFieldDescription(field),
 }));
 
-export function getTopLevelFieldSchema(field: XrayConfigKey): RJSFSchema {
+export function getTopLevelFieldOptions(locale: Locale) {
+  return topLevelFields.map((field) => ({
+    value: field,
+    label: translateSchemaLabel(locale, field),
+    description: getFieldDescription(field, locale),
+  }));
+}
+
+export function getTopLevelFieldSchema(field: XrayConfigKey, locale: Locale): RJSFSchema {
   const fieldSchema = rootProperties[field];
+  const localizedFieldSchema =
+    typeof fieldSchema === 'object' && fieldSchema !== null ? (localizeSchemaNode(fieldSchema, locale, [field]) as Record<string, unknown>) : {};
 
   return {
-    ...(typeof fieldSchema === 'object' ? fieldSchema : {}),
-    title: field,
-    definitions: xraySchema.definitions,
+    ...localizedFieldSchema,
+    title: translateSchemaLabel(locale, field),
+    definitions: localizeDefinitions(xraySchema.definitions, locale),
   } as RJSFSchema;
 }
 
-export function getTopLevelFieldUiSchema(field: XrayConfigKey): UiSchema {
+export function getTopLevelFieldUiSchema(field: XrayConfigKey, locale: Locale): UiSchema {
   const fieldUiSchema = uiSchema[field];
+  const localizedFieldUiSchema =
+    typeof fieldUiSchema === 'object' && fieldUiSchema !== null ? (localizeUiSchemaNode(fieldUiSchema, locale, [field]) as UiSchema) : {};
 
   return {
     'ui:submitButtonOptions': {
       norender: true,
     },
-    ...(typeof fieldUiSchema === 'object' ? fieldUiSchema : {}),
+    ...localizedFieldUiSchema,
   };
 }
 
@@ -107,23 +121,73 @@ export function normalizeProtocolSwitches(field: XrayConfigKey, nextFormData: un
       settings: {},
     };
 
+    let nextStreamSettings = isRecord(nextItem.streamSettings) ? { ...nextItem.streamSettings } : undefined;
+
     if (nextProtocol === 'hysteria') {
-      normalizedItem.streamSettings = {
-        ...(isRecord(nextItem.streamSettings) ? nextItem.streamSettings : {}),
+      nextStreamSettings = {
+        ...(nextStreamSettings ?? {}),
         network: 'hysteria',
       };
-    } else if (previousProtocol === 'hysteria' && isRecord(nextItem.streamSettings)) {
-      const nextStreamSettings = { ...nextItem.streamSettings };
-
+    } else if (previousProtocol === 'hysteria' && nextStreamSettings) {
       if (nextStreamSettings.network === 'hysteria') {
         delete nextStreamSettings.network;
       }
+    }
 
+    nextStreamSettings = normalizeHysteriaStreamSettings(nextStreamSettings);
+
+    if (nextStreamSettings) {
       normalizedItem.streamSettings = nextStreamSettings;
     }
 
     return normalizedItem;
   });
+}
+
+export function normalizeSelectedFieldValue(field: XrayConfigKey, nextFormData: unknown, previousFormData: unknown) {
+  return normalizeHysteriaStreamSettingsInValue(normalizeProtocolSwitches(field, nextFormData, previousFormData));
+}
+
+function normalizeHysteriaStreamSettings(streamSettings: Record<string, unknown> | undefined) {
+  if (!streamSettings || streamSettings.network !== 'hysteria') {
+    return streamSettings;
+  }
+
+  const normalizedStreamSettings: Record<string, unknown> = {
+    ...streamSettings,
+    security: 'tls',
+  };
+  const allowedKeys = new Set(['network', 'security', 'tlsSettings', 'hysteriaSettings']);
+
+  Object.keys(normalizedStreamSettings).forEach((key) => {
+    if (!allowedKeys.has(key)) {
+      delete normalizedStreamSettings[key];
+    }
+  });
+
+  return normalizedStreamSettings;
+}
+
+function normalizeHysteriaStreamSettingsInValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeHysteriaStreamSettingsInValue(item));
+  }
+
+  if (!isRecord(value)) {
+    return value;
+  }
+
+  const normalizedValue: Record<string, unknown> = {};
+
+  Object.entries(value).forEach(([key, item]) => {
+    normalizedValue[key] = normalizeHysteriaStreamSettingsInValue(item);
+  });
+
+  if (isRecord(normalizedValue.streamSettings)) {
+    normalizedValue.streamSettings = normalizeHysteriaStreamSettings(normalizedValue.streamSettings);
+  }
+
+  return normalizedValue;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -138,14 +202,97 @@ function orderFields(fields: string[], preferredOrder: string[]) {
   return [...orderedFields, ...remainingFields];
 }
 
-function getFieldDescription(field: XrayConfigKey) {
+function getFieldDescription(field: XrayConfigKey, locale: Locale = 'en-US') {
   const fieldSchema = rootProperties[field];
 
   if (typeof fieldSchema === 'object' && 'description' in fieldSchema) {
-    return String(fieldSchema.description);
+    return locale === 'en-US' ? String(fieldSchema.description) : String(fieldSchema.description);
   }
 
   return '';
+}
+
+function localizeDefinitions(definitions: Record<string, unknown>, locale: Locale) {
+  const localizedDefinitions: Record<string, unknown> = {};
+
+  Object.entries(definitions).forEach(([key, definition]) => {
+    localizedDefinitions[key] = localizeSchemaNode(definition, locale, [key]);
+  });
+
+  return localizedDefinitions;
+}
+
+function localizeSchemaNode(node: unknown, locale: Locale, path: string[]): unknown {
+  if (Array.isArray(node)) {
+    return node.map((item) => localizeSchemaNode(item, locale, path));
+  }
+
+  if (!isRecord(node)) {
+    return node;
+  }
+
+  const cloned: Record<string, unknown> = { ...node };
+  const lastSegment = path[path.length - 1];
+  const translatedTitle = translateSchemaLabel(locale, lastSegment);
+
+  if (translatedTitle && translatedTitle !== lastSegment) {
+    cloned.title = translatedTitle;
+  }
+
+  if (isRecord(cloned.properties)) {
+    const localizedProperties: Record<string, unknown> = {};
+
+    Object.entries(cloned.properties).forEach(([key, propertySchema]) => {
+      localizedProperties[key] = localizeSchemaNode(propertySchema, locale, [...path, key]);
+    });
+
+    cloned.properties = localizedProperties;
+  }
+
+  if ('items' in cloned && cloned.items !== undefined) {
+    cloned.items = localizeSchemaNode(cloned.items, locale, [...path, 'items']);
+  }
+
+  if (isRecord(cloned.definitions)) {
+    cloned.definitions = localizeDefinitions(cloned.definitions, locale);
+  }
+
+  if (Array.isArray(cloned.anyOf)) {
+    cloned.anyOf = cloned.anyOf.map((item) => localizeSchemaNode(item, locale, path));
+  }
+
+  if (Array.isArray(cloned.oneOf)) {
+    cloned.oneOf = cloned.oneOf.map((item) => localizeSchemaNode(item, locale, path));
+  }
+
+  if (Array.isArray(cloned.allOf)) {
+    cloned.allOf = cloned.allOf.map((item) => localizeSchemaNode(item, locale, path));
+  }
+
+  return cloned;
+}
+
+function localizeUiSchemaNode(node: unknown, locale: Locale, path: string[]): unknown {
+  if (Array.isArray(node)) {
+    return node.map((item) => localizeUiSchemaNode(item, locale, path));
+  }
+
+  if (!isRecord(node)) {
+    return node;
+  }
+
+  const cloned: Record<string, unknown> = {};
+
+  Object.entries(node).forEach(([key, value]) => {
+    if (key === 'ui:placeholder' && typeof value === 'string') {
+      cloned[key] = translateUiPlaceholder(locale, path.join('.')) ?? value;
+      return;
+    }
+
+    cloned[key] = localizeUiSchemaNode(value, locale, [...path, key]);
+  });
+
+  return cloned;
 }
 
 export const uiSchema: UiSchema = {
@@ -251,6 +398,7 @@ export const uiSchema: UiSchema = {
           'network',
           'security',
           'tlsSettings',
+          'hysteriaSettings',
           'realitySettings',
           'rawSettings',
           'wsSettings',
@@ -260,6 +408,9 @@ export const uiSchema: UiSchema = {
           'sockopt',
           '*',
         ],
+        security: {
+          'ui:widget': 'HysteriaAwareSecurityWidget',
+        },
         tlsSettings: {
           'ui:order': ['serverName', 'certificates', 'alpn', 'fingerprint', 'allowInsecure', '*'],
         },
@@ -342,6 +493,9 @@ export const uiSchema: UiSchema = {
           'sockopt',
           '*',
         ],
+        security: {
+          'ui:widget': 'HysteriaAwareSecurityWidget',
+        },
         tlsSettings: {
           'ui:order': ['serverName', 'alpn', 'fingerprint', 'allowInsecure', 'certificates', '*'],
         },
@@ -474,6 +628,7 @@ export const uiSchema: UiSchema = {
       'network',
       'security',
       'tlsSettings',
+      'hysteriaSettings',
       'realitySettings',
       'rawSettings',
       'wsSettings',
@@ -483,6 +638,9 @@ export const uiSchema: UiSchema = {
       'sockopt',
       '*',
     ],
+    security: {
+      'ui:widget': 'HysteriaAwareSecurityWidget',
+    },
   },
   sockopt: {
     'ui:order': ['interface', 'domainStrategy', 'tcpFastOpen', 'tcpMptcp', 'mark', 'dialerProxy', 'tproxy', '*'],

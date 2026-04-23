@@ -970,7 +970,85 @@
         "sockopt": {
           "$ref": "#/definitions/SockoptObject"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "network": {
+                "const": "hysteria"
+              }
+            },
+            "required": [
+              "network"
+            ]
+          },
+          "then": {
+            "properties": {
+              "security": {
+                "enum": [
+                  "tls"
+                ]
+              }
+            },
+            "required": [
+              "network",
+              "security",
+              "tlsSettings",
+              "hysteriaSettings"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "realitySettings"
+                  ]
+                },
+                {
+                  "required": [
+                    "rawSettings"
+                  ]
+                },
+                {
+                  "required": [
+                    "xhttpSettings"
+                  ]
+                },
+                {
+                  "required": [
+                    "kcpSettings"
+                  ]
+                },
+                {
+                  "required": [
+                    "grpcSettings"
+                  ]
+                },
+                {
+                  "required": [
+                    "wsSettings"
+                  ]
+                },
+                {
+                  "required": [
+                    "httpupgradeSettings"
+                  ]
+                },
+                {
+                  "required": [
+                    "udpmasks"
+                  ]
+                },
+                {
+                  "required": [
+                    "sockopt"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
     },
     "TransportObject": {
       "type": "object",
@@ -1159,7 +1237,12 @@
           ]
         },
         "congestion": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "brutal",
+            "bbr",
+            "cubic"
+          ]
         },
         "up": {
           "type": "string"
