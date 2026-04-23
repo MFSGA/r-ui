@@ -1,6 +1,7 @@
 import type { ChangeEvent, FocusEvent, MouseEvent } from 'react';
 import { useCallback } from 'react';
 import AutoFixHighRoundedIcon from '@mui/icons-material/AutoFixHighRounded';
+import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import TextField from '@mui/material/TextField';
@@ -42,11 +43,8 @@ export default function PlaceholderBaseInputTemplate<
     InputLabelProps,
     InputProps,
     slotProps,
-    uiSchema,
-    hideError,
     ...textFieldProps
   } = props;
-  const { ClearButton } = registry.templates.ButtonTemplates;
   const { step, min, max, accept, ...rest } = getInputProps<T, S, F>(schema, type, options);
   const htmlInputProps = {
     ...slotProps?.htmlInput,
@@ -83,6 +81,7 @@ export default function PlaceholderBaseInputTemplate<
   );
   const inputProps = { ...InputProps, ...slotProps?.input };
   const endAdornments = [];
+  const isStringInput = schema.type === 'string' || type === 'text' || type === 'email' || type === 'password' || type === 'search' || type === 'url' || type === 'tel';
 
   if (canApplyPlaceholder) {
     endAdornments.push(
@@ -96,10 +95,14 @@ export default function PlaceholderBaseInputTemplate<
     );
   }
 
-  if (options.allowClearTextInputs && value && !readonly && !disabled) {
+  if (isStringInput && value && !readonly && !disabled) {
     endAdornments.push(
       <InputAdornment key="clear" position="end">
-        <ClearButton registry={registry} onClick={_onClear} />
+        <Tooltip title={t('template.clearInput')}>
+          <IconButton aria-label={t('template.clearInput')} edge="end" size="small" onClick={_onClear}>
+            <ClearRoundedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </InputAdornment>,
     );
   }
