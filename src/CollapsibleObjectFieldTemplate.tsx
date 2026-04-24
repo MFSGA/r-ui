@@ -1,5 +1,4 @@
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
-import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
 import {
   Accordion,
   AccordionDetails,
@@ -10,12 +9,11 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import type { MouseEvent } from 'react';
 import type { FormContextType, ObjectFieldTemplateProps, RJSFSchema, StrictRJSFSchema } from '@rjsf/utils';
 import { buttonId, canExpand } from '@rjsf/utils';
+import RealitySettingsWizardDialog from './RealitySettingsWizardDialog';
 import TlsSettingsWizardDialog from './TlsSettingsWizardDialog';
 import { useI18n } from './i18n';
-import { generateRealityKeyPair } from './realityKeys';
 import { useXrayFormUpdate, type UpdateSelectedFieldPath } from './XrayFormUpdateContext';
 
 type CollapsibleObjectFieldTemplateExtraProps = {
@@ -76,28 +74,29 @@ export default function CollapsibleObjectFieldTemplate<
     ('privateKey' in schemaProperties && 'publicKey' in schemaProperties && 'shortIds' in schemaProperties);
   const canAddProperty = canExpand<T, S, F>(schema, uiSchema, formData);
   const updateRealitySettings = updateSelectedFieldPath ?? contextUpdateSelectedFieldPath;
-  const canGenerateRealityKeys = Boolean(isRealitySettingsObject && !disabled && !readonly && updateRealitySettings);
-  const handleGenerateRealityKeys = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (!updateRealitySettings) {
-      return;
-    }
-
-    const keyPair = generateRealityKeyPair();
-    const nextRealitySettings =
-      typeof formData === 'object' && formData !== null && !Array.isArray(formData)
-        ? { ...(formData as Record<string, unknown>), ...keyPair }
-        : keyPair;
-
-    updateRealitySettings([...fieldPathId.path], nextRealitySettings);
-  };
 
   if (isTlsSettingsObject) {
     return (
       <Box sx={{ py: 1 }}>
         <TlsSettingsWizardDialog title={objectTitle} description={description} required={required} properties={properties} />
+      </Box>
+    );
+  }
+
+  if (isRealitySettingsObject) {
+    return (
+      <Box sx={{ py: 1 }}>
+        <RealitySettingsWizardDialog
+          title={objectTitle}
+          description={description}
+          disabled={disabled}
+          fieldPath={[...fieldPathId.path]}
+          formData={formData}
+          properties={properties}
+          readonly={readonly}
+          required={required}
+          updateSelectedFieldPath={updateRealitySettings}
+        />
       </Box>
     );
   }
@@ -118,20 +117,12 @@ export default function CollapsibleObjectFieldTemplate<
       }}
     >
       <AccordionSummary component="div" expandIcon={<ExpandMoreRoundedIcon />}>
-        <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between" sx={{ width: '100%', minWidth: 0 }}>
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-            <Typography variant={isRootObject ? 'h6' : 'subtitle1'} sx={{ fontWeight: 700 }}>
-              {objectTitle}
-              {required ? ' *' : ''}
-            </Typography>
-            <Chip size="small" label={locale === 'zh-CN' ? `${visibleProperties.length} 个字段` : `${visibleProperties.length} fields`} />
-          </Stack>
-
-          {canGenerateRealityKeys ? (
-            <Button size="small" variant="outlined" startIcon={<VpnKeyRoundedIcon />} onClick={handleGenerateRealityKeys}>
-              {t('template.reality.generateKeys')}
-            </Button>
-          ) : null}
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+          <Typography variant={isRootObject ? 'h6' : 'subtitle1'} sx={{ fontWeight: 700 }}>
+            {objectTitle}
+            {required ? ' *' : ''}
+          </Typography>
+          <Chip size="small" label={locale === 'zh-CN' ? `${visibleProperties.length} 个字段` : `${visibleProperties.length} fields`} />
         </Stack>
       </AccordionSummary>
 
