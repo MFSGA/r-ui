@@ -16,6 +16,7 @@
     "@iarna/toml": "^2.2.5",
     "@mui/icons-material": "7.3.9",
     "@mui/material": "7.3.9",
+    "@noble/curves": "^2.2.0",
     "@rjsf/core": "6.4.2",
     "@rjsf/mui": "6.4.2",
     "@rjsf/utils": "6.4.2",

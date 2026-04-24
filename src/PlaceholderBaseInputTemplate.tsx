@@ -40,6 +40,8 @@ export default function PlaceholderBaseInputTemplate<
     schema,
     rawErrors = [],
     registry,
+    uiSchema: _uiSchema,
+    hideError: _hideError,
     InputLabelProps,
     InputProps,
     slotProps,

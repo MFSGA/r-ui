@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, MouseEvent } from 'react';
 import Form from '@rjsf/mui';
 import validator from '@rjsf/validator-ajv8';
@@ -33,6 +33,7 @@ import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import CollapsibleObjectFieldTemplate from './CollapsibleObjectFieldTemplate';
 import HysteriaAwareSecurityWidget from './HysteriaAwareSecurityWidget';
 import PlaceholderBaseInputTemplate from './PlaceholderBaseInputTemplate';
+import { XrayFormUpdateProvider } from './XrayFormUpdateContext';
 import type { XrayConfig } from './schema';
 import {
   defaultConfig,
@@ -172,6 +173,63 @@ function findInitialSelectedField(config: XrayConfig) {
   return topLevelFields.find((field) => Object.prototype.hasOwnProperty.call(config, field)) ?? initialSelectedField;
 }
 
+function setValueAtPath(rootValue: unknown, path: Array<string | number>, nextValue: unknown) {
+  if (path.length === 0) {
+    return nextValue;
+  }
+
+  const rootContainer = cloneContainer(rootValue, path[0]);
+  let cursor = rootContainer as Record<string, unknown> | unknown[];
+
+  path.slice(0, -1).forEach((segment, index) => {
+    const nextSegment = path[index + 1];
+    const currentValue = getSegmentValue(cursor, segment);
+    const nextContainer = cloneContainer(currentValue, nextSegment);
+
+    if (Array.isArray(cursor) && isArrayIndexSegment(segment)) {
+      cursor[Number(segment)] = nextContainer;
+    } else {
+      (cursor as Record<string, unknown>)[String(segment)] = nextContainer;
+    }
+
+    cursor = nextContainer as Record<string, unknown> | unknown[];
+  });
+
+  const lastSegment = path[path.length - 1];
+
+  if (Array.isArray(cursor) && isArrayIndexSegment(lastSegment)) {
+    cursor[Number(lastSegment)] = nextValue;
+  } else {
+    (cursor as Record<string, unknown>)[String(lastSegment)] = nextValue;
+  }
+
+  return rootContainer;
+}
+
+function cloneContainer(value: unknown, nextSegment: string | number) {
+  if (Array.isArray(value)) {
+    return [...value];
+  }
+
+  if (isPlainObject(value)) {
+    return { ...value };
+  }
+
+  return isArrayIndexSegment(nextSegment) ? [] : {};
+}
+
+function getSegmentValue(container: Record<string, unknown> | unknown[], segment: string | number) {
+  if (Array.isArray(container) && isArrayIndexSegment(segment)) {
+    return container[Number(segment)];
+  }
+
+  return (container as Record<string, unknown>)[String(segment)];
+}
+
+function isArrayIndexSegment(segment: string | number) {
+  return typeof segment === 'number' || /^\d+$/.test(segment);
+}
+
 export default function App() {
   const { locale, setLocale, t, translateString, transformValidationErrors } = useI18n();
   const [config, setConfig] = useState<XrayConfig>(() => createDefaultConfig());
@@ -191,13 +249,6 @@ export default function App() {
   const selectedSchema = useMemo(() => getTopLevelFieldSchema(selectedField, locale), [selectedField, locale]);
   const selectedUiSchema = useMemo(() => getTopLevelFieldUiSchema(selectedField, locale), [selectedField, locale]);
   const selectedFieldValue = config[selectedField];
-  const templates = useMemo(
-    () => ({
-      BaseInputTemplate: PlaceholderBaseInputTemplate,
-      ObjectFieldTemplate: CollapsibleObjectFieldTemplate,
-    }),
-    [],
-  );
   const selectedModulePreview = useMemo(() => {
     const moduleConfig =
       selectedFieldValue === undefined
@@ -214,11 +265,39 @@ export default function App() {
     }),
     [],
   );
+  const updateSelectedFieldPath = useCallback(
+    (path: Array<string | number>, nextValue: unknown) => {
+      setConfig((currentConfig) => {
+        const nextSelectedValue = setValueAtPath(
+          structuredClone(currentConfig[selectedField]),
+          path,
+          nextValue,
+        );
+
+        return orderXrayConfig({
+          ...currentConfig,
+          [selectedField]: normalizeSelectedFieldValue(selectedField, nextSelectedValue, currentConfig[selectedField]),
+        });
+      });
+      setIsSubmitted(false);
+    },
+    [selectedField],
+  );
+  const templates = useMemo(
+    () => ({
+      BaseInputTemplate: PlaceholderBaseInputTemplate,
+      ObjectFieldTemplate: (props: Parameters<typeof CollapsibleObjectFieldTemplate>[0]) => (
+        <CollapsibleObjectFieldTemplate {...props} updateSelectedFieldPath={updateSelectedFieldPath} />
+      ),
+    }),
+    [updateSelectedFieldPath],
+  );
   const formContext = useMemo(
     () => ({
       currentData: selectedFieldValue,
+      updateSelectedFieldPath,
     }),
-    [selectedFieldValue],
+    [selectedFieldValue, updateSelectedFieldPath],
   );
   const selectedFieldOptions = useMemo(() => getTopLevelFieldOptions(locale), [locale]);
   const isImportMenuOpen = Boolean(importMenuAnchorEl);
@@ -448,49 +527,51 @@ export default function App() {
                   {t('app.importHint')}
                 </Typography>
 
-                <Form
-                  key={`${selectedField}-${locale}`}
-                  schema={selectedSchema}
-                  uiSchema={selectedUiSchema}
-                  validator={validator}
-                  formData={selectedFieldValue}
-                  liveValidate
-                  noHtml5Validate
-                  showErrorList={false}
-                  templates={templates}
-                  widgets={widgets}
-                  formContext={formContext}
-                  translateString={translateString}
-                  transformErrors={transformValidationErrors}
-                  onChange={handleChange}
-                  onSubmit={handleSubmit}
-                >
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2 }}>
-                    <Button type="submit" variant="contained" startIcon={<SaveRoundedIcon />}>
-                      {t('app.saveModule')}
-                    </Button>
-                    <Button variant="outlined" onClick={handleImportMenuOpen}>
-                      {t('app.importConfig')}
-                    </Button>
-                    <Button variant="outlined" onClick={handleReset} startIcon={<ReplayRoundedIcon />}>
-                      {t('app.resetModule')}
-                    </Button>
-                    <Button
-                      variant="text"
-                      onClick={() => {
-                        try {
-                          downloadConfigFile(config, configFormat);
-                          setOperationError(null);
-                        } catch {
-                          setOperationError(t('app.exportFailed'));
-                        }
-                      }}
-                      startIcon={<DownloadRoundedIcon />}
-                    >
-                      {t('app.downloadConfig')}
-                    </Button>
-                  </Stack>
-                </Form>
+                <XrayFormUpdateProvider value={updateSelectedFieldPath}>
+                  <Form
+                    key={`${selectedField}-${locale}`}
+                    schema={selectedSchema}
+                    uiSchema={selectedUiSchema}
+                    validator={validator}
+                    formData={selectedFieldValue}
+                    liveValidate
+                    noHtml5Validate
+                    showErrorList={false}
+                    templates={templates}
+                    widgets={widgets}
+                    formContext={formContext}
+                    translateString={translateString}
+                    transformErrors={transformValidationErrors}
+                    onChange={handleChange}
+                    onSubmit={handleSubmit}
+                  >
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2 }}>
+                      <Button type="submit" variant="contained" startIcon={<SaveRoundedIcon />}>
+                        {t('app.saveModule')}
+                      </Button>
+                      <Button variant="outlined" onClick={handleImportMenuOpen}>
+                        {t('app.importConfig')}
+                      </Button>
+                      <Button variant="outlined" onClick={handleReset} startIcon={<ReplayRoundedIcon />}>
+                        {t('app.resetModule')}
+                      </Button>
+                      <Button
+                        variant="text"
+                        onClick={() => {
+                          try {
+                            downloadConfigFile(config, configFormat);
+                            setOperationError(null);
+                          } catch {
+                            setOperationError(t('app.exportFailed'));
+                          }
+                        }}
+                        startIcon={<DownloadRoundedIcon />}
+                      >
+                        {t('app.downloadConfig')}
+                      </Button>
+                    </Stack>
+                  </Form>
+                </XrayFormUpdateProvider>
 
                 <Menu anchorEl={importMenuAnchorEl} open={isImportMenuOpen} onClose={handleImportMenuClose}>
                   <MenuItem onClick={handleImportFileClick}>{t('app.importFromFile')}</MenuItem>
