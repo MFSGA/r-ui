@@ -38,6 +38,7 @@ import {
   detectConfigFormat,
   detectConfigFormatFromUrl,
   downloadConfigFile,
+  isPlainObject,
   parseImportedConfig,
   type ConfigFormat,
 } from './configFormat';
