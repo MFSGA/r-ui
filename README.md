@@ -30,7 +30,7 @@ pnpm dev
 复制 `.env.example` 后按需修改：
 
 ```bash
-VITE_API_TARGET=http://localhost:8080
+VITE_API_TARGET=http://127.0.0.1:3000
 VITE_DEV_PORT=5173
 ```
 
