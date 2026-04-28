@@ -4,9 +4,11 @@
   "version": "0.1.0",
   "license": "LGPL-3.0-or-later",
   "type": "module",
+  "packageManager": "pnpm@10.13.1",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "build": "pnpm typecheck && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
