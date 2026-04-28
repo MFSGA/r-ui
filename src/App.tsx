@@ -3,9 +3,6 @@ import type { ChangeEvent, MouseEvent } from 'react';
 import Form from '@rjsf/mui';
 import validator from '@rjsf/validator-ajv8';
 import type { IChangeEvent } from '@rjsf/core';
-import JSON5 from 'json5';
-import TOML from '@iarna/toml';
-import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import {
   Alert,
   Box,
@@ -28,12 +25,22 @@ import {
   Typography,
 } from '@mui/material';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
+import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import CollapsibleObjectFieldTemplate from './CollapsibleObjectFieldTemplate';
 import HysteriaAwareSecurityWidget from './HysteriaAwareSecurityWidget';
 import PlaceholderBaseInputTemplate from './PlaceholderBaseInputTemplate';
+import PostConfigDialog from './PostConfigDialog';
 import { XrayFormUpdateProvider } from './XrayFormUpdateContext';
+import {
+  configFormatOptions,
+  detectConfigFormat,
+  detectConfigFormatFromUrl,
+  downloadConfigFile,
+  parseImportedConfig,
+  type ConfigFormat,
+} from './configFormat';
 import type { XrayConfig } from './schema';
 import {
   defaultConfig,
@@ -46,128 +53,11 @@ import {
 } from './schema';
 import { localeOptions, useI18n } from './i18n';
 
-type ConfigFormat = 'json' | 'json5' | 'yaml' | 'toml';
-
-const configFormatOptions: Array<{ value: ConfigFormat; labelKey: string }> = [
-  { value: 'json', labelKey: 'app.format.json' },
-  { value: 'json5', labelKey: 'app.format.json5' },
-  { value: 'yaml', labelKey: 'app.format.yaml' },
-  { value: 'toml', labelKey: 'app.format.toml' },
-];
-
 function createDefaultConfig() {
   return orderXrayConfig(structuredClone(defaultConfig));
 }
 
 const initialSelectedField = topLevelFields.includes('inbounds') ? 'inbounds' : topLevelFields[0];
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function createParseOrder(primaryFormat: ConfigFormat | null, secondaryFormat: ConfigFormat | null) {
-  return Array.from(
-    new Set([primaryFormat, secondaryFormat, 'json', 'json5', 'yaml', 'toml'].filter(Boolean) as ConfigFormat[]),
-  );
-}
-
-function detectConfigFormat(fileName: string): ConfigFormat | null {
-  const lowerName = fileName.toLowerCase();
-
-  if (lowerName.endsWith('.json5')) {
-    return 'json5';
-  }
-
-  if (lowerName.endsWith('.yaml') || lowerName.endsWith('.yml')) {
-    return 'yaml';
-  }
-
-  if (lowerName.endsWith('.toml')) {
-    return 'toml';
-  }
-
-  if (lowerName.endsWith('.json')) {
-    return 'json';
-  }
-
-  return null;
-}
-
-function detectConfigFormatFromUrl(url: string): ConfigFormat | null {
-  try {
-    return detectConfigFormat(new URL(url, window.location.href).pathname);
-  } catch {
-    return null;
-  }
-}
-
-function parseConfigText(text: string, format: ConfigFormat) {
-  switch (format) {
-    case 'json':
-      return JSON.parse(text) as unknown;
-    case 'json5':
-      return JSON5.parse(text) as unknown;
-    case 'yaml':
-      return parseYaml(text) as unknown;
-    case 'toml':
-      return TOML.parse(text) as unknown;
-  }
-}
-
-function serializeConfigText(config: XrayConfig, format: ConfigFormat) {
-  const ordered = orderXrayConfig(config);
-
-  switch (format) {
-    case 'json':
-      return JSON.stringify(ordered, null, 2);
-    case 'json5':
-      return JSON5.stringify(ordered, null, 2);
-    case 'yaml':
-      return stringifyYaml(ordered, { lineWidth: 0 });
-    case 'toml':
-      return TOML.stringify(ordered as any);
-  }
-}
-
-function downloadConfigFile(config: XrayConfig, format: ConfigFormat) {
-  const content = serializeConfigText(config, format);
-  const mimeType =
-    format === 'json'
-      ? 'application/json;charset=utf-8'
-      : format === 'json5'
-        ? 'application/json5;charset=utf-8'
-        : format === 'yaml'
-          ? 'application/yaml;charset=utf-8'
-          : 'application/toml;charset=utf-8';
-  const extension = format === 'json' ? 'json' : format;
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = `xray-config.${extension}`;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
-
-function parseImportedConfig(text: string, preferredFormat: ConfigFormat | null, sourceFormat: ConfigFormat | null) {
-  const parseOrder = createParseOrder(sourceFormat, preferredFormat);
-
-  for (const format of parseOrder) {
-    try {
-      const parsed = parseConfigText(text, format);
-      if (isPlainObject(parsed)) {
-        return {
-          config: orderXrayConfig(parsed as XrayConfig),
-          format,
-        };
-      }
-    } catch {
-      // Try the next supported format.
-    }
-  }
-
-  throw new Error('Unable to parse imported config.');
-}
 
 function findInitialSelectedField(config: XrayConfig) {
   return topLevelFields.find((field) => Object.prototype.hasOwnProperty.call(config, field)) ?? initialSelectedField;
@@ -241,6 +131,7 @@ export default function App() {
   const [isImportUrlOpen, setIsImportUrlOpen] = useState(false);
   const [importUrl, setImportUrl] = useState('');
   const [isImportingUrl, setIsImportingUrl] = useState(false);
+  const [isPostUrlOpen, setIsPostUrlOpen] = useState(false);
   const [operationError, setOperationError] = useState<string | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -427,6 +318,11 @@ export default function App() {
     }
   };
 
+  const handlePostUrlOpen = () => {
+    setOperationError(null);
+    setIsPostUrlOpen(true);
+  };
+
   return (
     <Box
       sx={{
@@ -554,6 +450,9 @@ export default function App() {
                       </Button>
                       <Button variant="outlined" onClick={handleReset} startIcon={<ReplayRoundedIcon />}>
                         {t('app.resetModule')}
+                      </Button>
+                      <Button variant="outlined" onClick={handlePostUrlOpen} startIcon={<SendRoundedIcon />}>
+                        {t('app.postConfig')}
                       </Button>
                       <Button
                         variant="text"
@@ -689,6 +588,14 @@ export default function App() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <PostConfigDialog
+        config={orderedConfig}
+        format={configFormat}
+        onClose={() => setIsPostUrlOpen(false)}
+        onError={setOperationError}
+        open={isPostUrlOpen}
+      />
 
       <Box
         component="input"
