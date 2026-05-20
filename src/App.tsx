@@ -15,6 +15,7 @@ import {
   DialogTitle,
   Divider,
   FormControl,
+  InputAdornment,
   InputLabel,
   MenuItem,
   Menu,
@@ -22,12 +23,14 @@ import {
   Select,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import CollapsibleObjectFieldTemplate from './CollapsibleObjectFieldTemplate';
 import HysteriaAwareSecurityWidget from './HysteriaAwareSecurityWidget';
 import PlaceholderBaseInputTemplate from './PlaceholderBaseInputTemplate';
@@ -53,6 +56,10 @@ import {
   topLevelFields,
 } from './schema';
 import { localeOptions, useI18n } from './i18n';
+import { outboundToVlessShare, formatVlessShareLink } from './utils/vless-share';
+import VlessImportDialog from './vless/ImportDialog';
+import VlessBatchImportDialog from './vless/BatchImportDialog';
+import ShareLinkPanel from './vless/ShareLinkPanel';
 
 function createDefaultConfig() {
   return orderXrayConfig(structuredClone(defaultConfig));
@@ -129,12 +136,26 @@ export default function App() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isFullJsonOpen, setIsFullJsonOpen] = useState(false);
   const [importMenuAnchorEl, setImportMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [isImportUrlOpen, setIsImportUrlOpen] = useState(false);
-  const [importUrl, setImportUrl] = useState('');
-  const [isImportingUrl, setIsImportingUrl] = useState(false);
-  const [isPostUrlOpen, setIsPostUrlOpen] = useState(false);
-  const [operationError, setOperationError] = useState<string | null>(null);
-  const importInputRef = useRef<HTMLInputElement | null>(null);
+   const [isImportUrlOpen, setIsImportUrlOpen] = useState(false);
+   const [importUrl, setImportUrl] = useState('');
+   const [isImportingUrl, setIsImportingUrl] = useState(false);
+   const [isPostUrlOpen, setIsPostUrlOpen] = useState(false);
+   const [operationError, setOperationError] = useState<string | null>(null);
+   const importInputRef = useRef<HTMLInputElement | null>(null);
+   
+    // VLESS copy functionality state
+     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+     const [errorIndex, setErrorIndex] = useState<number | null>(null);
+     const [vlessLinks, setVlessLinks] = useState<Record<number, string>>({});
+
+      // VLESS batch import state
+      const [vlessBatchImportOpen, setVlessBatchImportOpen] = useState(false);
+
+      // VLESS share link panel state
+      const [vlessPanelOpen, setVlessPanelOpen] = useState(false);
+
+      // VLESS single import dialog state
+      const [vlessImportOpen, setVlessImportOpen] = useState(false);
 
   const orderedConfig = useMemo(() => orderXrayConfig(config), [config]);
   const fullJsonPreview = useMemo(() => JSON.stringify(orderedConfig, null, 2), [orderedConfig]);
@@ -319,10 +340,90 @@ export default function App() {
     }
   };
 
-  const handlePostUrlOpen = () => {
-    setOperationError(null);
-    setIsPostUrlOpen(true);
-  };
+   const handlePostUrlOpen = () => {
+     setOperationError(null);
+     setIsPostUrlOpen(true);
+   };
+
+    // VLESS copy functionality
+    const handleVlessCopy = async (outbound: Record<string, unknown>, index: number) => {
+      try {
+        const share = outboundToVlessShare(outbound);
+        const link = formatVlessShareLink(share);
+
+        // Store link for fallback display
+        setVlessLinks(prev => ({ ...prev, [index]: link }));
+
+        await navigator.clipboard.writeText(link);
+
+        // Show success indicator
+        setCopiedIndex(index);
+        setErrorIndex(null);
+
+        // Auto-clear copied state after 2 seconds
+        setTimeout(() => {
+          setCopiedIndex(prev => (prev === index ? null : prev));
+        }, 2000);
+      } catch (err) {
+        // Handle clipboard API failure - show fallback
+        console.warn('Clipboard write failed', err);
+        setErrorIndex(index);
+        setCopiedIndex(null);
+      }
+    };
+
+    const handleVlessBatchImportOpen = () => {
+      setOperationError(null);
+      setVlessBatchImportOpen(true);
+    };
+
+    const handleVlessBatchImportClose = () => {
+      setVlessBatchImportOpen(false);
+    };
+
+    const handleVlessBatchConfigUpdate = (updatedConfig: XrayConfig) => {
+      setConfig(updatedConfig);
+      setOperationError(null);
+      setIsSubmitted(false);
+    };
+
+    const handleVlessPanelOpen = () => {
+      setVlessPanelOpen(true);
+    };
+
+    const handleVlessPanelClose = () => {
+      setVlessPanelOpen(false);
+    };
+
+    const handleVlessPanelCopyLink = async (link: string) => {
+      await navigator.clipboard.writeText(link);
+    };
+
+    const handleVlessPanelDeleteOutbound = (index: number) => {
+      setConfig((currentConfig) => {
+        if (!Array.isArray(currentConfig.outbounds)) return currentConfig;
+        const nextOutbounds = [...currentConfig.outbounds];
+        nextOutbounds.splice(index, 1);
+        return orderXrayConfig({ ...currentConfig, outbounds: nextOutbounds });
+      });
+      setOperationError(null);
+      setIsSubmitted(false);
+    };
+
+    const handleVlessImportOpen = () => {
+      setOperationError(null);
+      setVlessImportOpen(true);
+    };
+
+    const handleVlessImportClose = () => {
+      setVlessImportOpen(false);
+    };
+
+    const handleVlessImportConfirm = (updatedConfig: XrayConfig) => {
+      setConfig(updatedConfig);
+      setOperationError(null);
+      setIsSubmitted(false);
+    };
 
   return (
     <Box
@@ -503,21 +604,122 @@ export default function App() {
 
                 {operationError ? <Alert severity="error">{operationError}</Alert> : null}
 
-                <Box
-                  component="pre"
-                  sx={{
-                    m: 0,
-                    p: 2,
-                    borderRadius: 3,
-                    bgcolor: 'grey.100',
-                    overflow: 'auto',
-                    fontSize: 13,
-                    lineHeight: 1.6,
-                    minHeight: 520,
-                  }}
-                >
-                  {selectedModulePreview}
-                </Box>
+                 <Box
+                   component="pre"
+                   sx={{
+                     m: 0,
+                     p: 2,
+                     borderRadius: 3,
+                     bgcolor: 'grey.100',
+                     overflow: 'auto',
+                     fontSize: 13,
+                     lineHeight: 1.6,
+                     minHeight: 520,
+                   }}
+                 >
+                   {selectedModulePreview}
+                 </Box>
+                 
+                   {/* VLESS Export Section */}
+                   {selectedField === 'outbounds' && Array.isArray(config.outbounds) && config.outbounds.length > 0 && (
+                     <Stack spacing={2} sx={{ mt: 3 }}>
+                        <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                          <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
+                            {t('app.vless.exportSection')}
+                          </Typography>
+                           <Stack direction="row" spacing={1}>
+                             <Button
+                               variant="outlined"
+                               size="small"
+                               onClick={handleVlessImportOpen}
+                              >
+                                {t('app.vless.importTitle')}
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={handleVlessPanelOpen}
+                              >
+                                {t('app.vless.panelTitle')}
+                             </Button>
+                             <Button
+                               variant="contained"
+                               size="small"
+                               onClick={handleVlessBatchImportOpen}
+                             >
+                               {t('app.vless.batchTitle')}
+                             </Button>
+                           </Stack>
+                        </Stack>
+                      {config.outbounds.map((outbound, index) => {
+                        const isVless = outbound?.protocol === 'vless';
+                        const isCopied = copiedIndex === index;
+                        const hasError = errorIndex === index;
+
+                        return (
+                          <Box key={index}>
+                            <Stack spacing={1.5}>
+                              {/* Outbound tag header */}
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Typography variant="body2" color="text.secondary">
+                                  {t('app.vless.outboundTag')}:
+                                </Typography>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {outbound.tag || `Outbound ${index + 1}`}
+                                </Typography>
+                              </Stack>
+
+                              {isVless ? (
+                                <>
+                                  {/* Copy button */}
+                                  <Button
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => handleVlessCopy(outbound, index)}
+                                    disabled={isCopied}
+                                    sx={{ alignSelf: 'flex-start' }}
+                                  >
+                                    {isCopied ? t('app.vless.copied') : t('app.vless.copyLink')}
+                                  </Button>
+
+                                  {/* Fallback TextField when clipboard API fails */}
+                                  {hasError && vlessLinks[index] && (
+                                    <TextField
+                                      fullWidth
+                                      size="small"
+                                      value={vlessLinks[index]}
+                                      inputProps={{ readOnly: true }}
+                                      onClick={(e) => {
+                                        (e.target as HTMLInputElement).select();
+                                      }}
+                                      InputProps={{
+                                        endAdornment: (
+                                          <InputAdornment position="end">
+                                            <Tooltip title={t('app.vless.clipboardManualCopy')}>
+                                              <ContentCopyRoundedIcon fontSize="small" />
+                                            </Tooltip>
+                                          </InputAdornment>
+                                        ),
+                                      }}
+                                    />
+                                  )}
+                                </>
+                              ) : (
+                                <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                                  {t('app.vless.notShareable')}
+                                </Typography>
+                              )}
+                            </Stack>
+
+                            {/* Visual divider between items */}
+                            {index < (config.outbounds as any[]).length - 1 && (
+                              <Divider sx={{ mt: 2 }} />
+                            )}
+                          </Box>
+                        );
+                      })}
+                    </Stack>
+                  )}
               </Stack>
             </Paper>
           </Stack>
@@ -596,6 +798,30 @@ export default function App() {
         onClose={() => setIsPostUrlOpen(false)}
         onError={setOperationError}
         open={isPostUrlOpen}
+      />
+
+      <VlessImportDialog
+        open={vlessImportOpen}
+        onClose={handleVlessImportClose}
+        config={orderedConfig}
+        onConfigUpdate={handleVlessImportConfirm}
+        onError={setOperationError}
+      />
+
+      <VlessBatchImportDialog
+        open={vlessBatchImportOpen}
+        onClose={handleVlessBatchImportClose}
+        config={orderedConfig}
+        onConfigUpdate={handleVlessBatchConfigUpdate}
+        onError={setOperationError}
+      />
+
+      <ShareLinkPanel
+        open={vlessPanelOpen}
+        onClose={handleVlessPanelClose}
+        config={orderedConfig}
+        onCopyLink={handleVlessPanelCopyLink}
+        onDeleteOutbound={handleVlessPanelDeleteOutbound}
       />
 
       <Box
