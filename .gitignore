@@ -6,3 +6,9 @@ dist/
 vite.config.js
 vite.config.d.ts
 tmp-*.log
+
+# Dev artifacts
+.dev-server.*
+.vite-dev*.log
+qa-verification.png
+.playwright-mcp/
