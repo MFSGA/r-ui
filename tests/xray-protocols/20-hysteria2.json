@@ -18,6 +18,16 @@
       },
       "streamSettings": {
         "network": "hysteria",
+        "security": "tls",
+        "tlsSettings": {
+          "serverName": "example.com",
+          "certificates": [
+            {
+              "certificateFile": "D:/mfsga/json-schema-mui-config-demo/tests/xray-protocols/cert.pem",
+              "keyFile": "D:/mfsga/json-schema-mui-config-demo/tests/xray-protocols/key.pem"
+            }
+          ]
+        },
         "hysteriaSettings": {
           "version": 2,
           "auth": "Se7RAuFZ8Lzg",
