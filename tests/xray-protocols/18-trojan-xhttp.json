@@ -1,0 +1,41 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 50018,
+      "protocol": "trojan",
+      "settings": {
+        "clients": [
+          {
+            "password": "trojan-xhttp-password"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "tls",
+        "tlsSettings": {
+          "serverName": "example.com",
+          "certificates": [
+            {
+          "certificateFile": "D:/mfsga/json-schema-mui-config-demo/tests/xray-protocols/cert.pem",
+          "keyFile": "D:/mfsga/json-schema-mui-config-demo/tests/xray-protocols/key.pem"
+            }
+          ]
+        },
+        "xhttpSettings": {
+          "path": "/trojan-xhttp",
+          "host": ""
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    }
+  ]
+}

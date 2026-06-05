@@ -1,0 +1,42 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 50009,
+      "protocol": "trojan",
+      "settings": {
+        "clients": [
+          {
+            "password": "password123",
+            "flow": ""
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "grpc",
+        "security": "tls",
+        "tlsSettings": {
+          "certificates": [
+            {
+"certificateFile": "cert.pem",
+      "keyFile": "key.pem"
+            }
+          ]
+        },
+        "grpcSettings": {
+          "serviceName": "trojan-grpc",
+          "multiMode": false
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    }
+  ]
+}
+

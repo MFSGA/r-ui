@@ -1,0 +1,33 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 50006,
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "550d887c-ecb9-4a55-b497-ac9b50917f2b",
+            "alterId": 0
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "none",
+        "xhttpSettings": {
+          "path": "/vmess-xhttp",
+          "host": ""
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    }
+  ]
+}
