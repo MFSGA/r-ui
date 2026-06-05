@@ -1,0 +1,44 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 50008,
+      "protocol": "trojan",
+      "settings": {
+        "clients": [
+          {
+            "password": "password123",
+            "flow": ""
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "tls",
+        "tlsSettings": {
+          "certificates": [
+            {
+"certificateFile": "cert.pem",
+      "keyFile": "key.pem"
+            }
+          ]
+        },
+        "wsSettings": {
+          "path": "/trojan",
+          "headers": {
+            "Host": ""
+          }
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    }
+  ]
+}
+

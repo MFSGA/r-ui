@@ -1,0 +1,4 @@
+Xray 26.4.17 (Xray, Penetrates Everything.) b465036 (go1.26.2 windows/amd64)
+A unified platform for anti-censorship.
+2026/05/25 13:07:30.183076 [Info] infra/conf/serial: Reading config: &{Name:D:\mfsga\json-schema-mui-config-demo\tests\xray-protocols\12-vless-tcp-vision.json Format:json}
+2026/05/25 13:07:30.186080 [Warning] core: Xray 26.4.17 started

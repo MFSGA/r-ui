@@ -1,0 +1,38 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 50017,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "550d887c-ecb9-4a55-b497-ac9b50917f2b",
+            "flow": "xtls-rprx-vision"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "show": false,
+          "dest": "www.google.com:443",
+          "serverNames": ["www.google.com"],
+          "privateKey": "eDKpTHVv6i5abBS4qxqMhXHYr7nHQcPDPWLhPmPRyHs",
+          "shortIds": ["abc123"],
+          "fingerprint": "chrome"
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    }
+  ]
+}

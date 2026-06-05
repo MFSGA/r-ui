@@ -1,0 +1,35 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 50002,
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          {
+            "id": "550d887c-ecb9-4a55-b497-ac9b50917f2b",
+            "alterId": 0
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "none",
+        "wsSettings": {
+          "path": "/vmess",
+          "headers": {
+            "Host": ""
+          }
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    }
+  ]
+}

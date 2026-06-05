@@ -1,0 +1,36 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 50020,
+      "protocol": "hysteria",
+      "settings": {
+        "version": 2,
+        "address": "0.0.0.0",
+        "port": 50020,
+        "clients": [
+          {
+            "auth": "Se7RAuFZ8Lzg"
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "hysteria",
+        "hysteriaSettings": {
+          "version": 2,
+          "auth": "Se7RAuFZ8Lzg",
+          "up": "100mbps",
+          "down": "100mbps"
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    }
+  ]
+}

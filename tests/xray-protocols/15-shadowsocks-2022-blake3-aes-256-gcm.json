@@ -1,0 +1,22 @@
+{
+    "log":  {
+                "loglevel":  "warning"
+            },
+    "inbounds":  [
+                     {
+                         "port":  50015,
+                         "protocol":  "shadowsocks",
+                         "settings":  {
+                                          "method":  "2022-blake3-aes-256-gcm",
+                                          "password":  "dfulSKkaIygZdutT5mpiApjiEo4Jano8syNMy5CqJ/k=",
+                                          "network":  "tcp,udp"
+                                      }
+                     }
+                 ],
+    "outbounds":  [
+                      {
+                          "protocol":  "freedom",
+                          "tag":  "direct"
+                      }
+                  ]
+}

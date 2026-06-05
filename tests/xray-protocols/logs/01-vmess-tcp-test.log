@@ -1,0 +1,5 @@
+Xray 26.4.17 (Xray, Penetrates Everything.) b465036 (go1.26.2 windows/amd64)
+A unified platform for anti-censorship.
+2026/05/25 13:01:17.546573 [Info] infra/conf/serial: Reading config: &{Name:D:\mfsga\json-schema-mui-config-demo\tests\xray-protocols\01-vmess-tcp.json Format:json}
+2026/05/25 13:01:17.547145 [Warning] common/errors: The feature VMess (with no Forward Secrecy, etc.) is deprecated, not recommended for using and might be removed. Please migrate to VLESS Encryption as soon as possible.
+Failed to start: app/proxyman/inbound: failed to listen TCP on 10001 > transport/internet: failed to listen on address: 0.0.0.0:10001 > transport/internet/tcp: failed to listen TCP on 0.0.0.0:10001 > listen tcp 0.0.0.0:10001: bind: An attempt was made to access a socket in a way forbidden by its access permissions.

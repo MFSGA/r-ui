@@ -1,0 +1,22 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 50011,
+      "protocol": "shadowsocks",
+      "settings": {
+        "method": "chacha20-ietf-poly1305",
+        "password": "ss-password-456",
+        "network": "tcp,udp"
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    }
+  ]
+}
