@@ -60,6 +60,10 @@ import { outboundToVlessShare, formatVlessShareLink } from './utils/vless-share'
 import VlessImportDialog from './vless/ImportDialog';
 import VlessBatchImportDialog from './vless/BatchImportDialog';
 import ShareLinkPanel from './vless/ShareLinkPanel';
+import MultiImportDialog from './multi-protocol/ImportDialog';
+import MultiBatchImportDialog from './multi-protocol/BatchImportDialog';
+import MultiShareLinkPanel from './multi-protocol/ShareLinkPanel';
+import { outboundToShare, formatShareLink } from './utils/multi-protocol-share';
 
 function createDefaultConfig() {
   return orderXrayConfig(structuredClone(defaultConfig));
@@ -156,6 +160,14 @@ export default function App() {
 
       // VLESS single import dialog state
       const [vlessImportOpen, setVlessImportOpen] = useState(false);
+
+      // Multi-protocol states
+      const [multiImportOpen, setMultiImportOpen] = useState(false);
+      const [multiBatchImportOpen, setMultiBatchImportOpen] = useState(false);
+      const [multiPanelOpen, setMultiPanelOpen] = useState(false);
+      const [multiCopiedIndex, setMultiCopiedIndex] = useState<number | null>(null);
+      const [multiErrorIndex, setMultiErrorIndex] = useState<number | null>(null);
+      const [multiLinks, setMultiLinks] = useState<Record<number, string>>({});
 
   const orderedConfig = useMemo(() => orderXrayConfig(config), [config]);
   const fullJsonPreview = useMemo(() => JSON.stringify(orderedConfig, null, 2), [orderedConfig]);
@@ -421,6 +433,60 @@ export default function App() {
 
     const handleVlessImportConfirm = (updatedConfig: XrayConfig) => {
       setConfig(updatedConfig);
+      setOperationError(null);
+      setIsSubmitted(false);
+    };
+
+    // Multi-protocol handlers
+    const handleMultiImportOpen = () => {
+      setOperationError(null);
+      setMultiImportOpen(true);
+    };
+
+    const handleMultiImportClose = () => {
+      setMultiImportOpen(false);
+    };
+
+    const handleMultiImportConfirm = (updatedConfig: XrayConfig) => {
+      setConfig(updatedConfig);
+      setOperationError(null);
+      setIsSubmitted(false);
+    };
+
+    const handleMultiBatchImportOpen = () => {
+      setOperationError(null);
+      setMultiBatchImportOpen(true);
+    };
+
+    const handleMultiBatchImportClose = () => {
+      setMultiBatchImportOpen(false);
+    };
+
+    const handleMultiBatchConfigUpdate = (updatedConfig: XrayConfig) => {
+      setConfig(updatedConfig);
+      setOperationError(null);
+      setIsSubmitted(false);
+    };
+
+    const handleMultiPanelOpen = () => {
+      setMultiPanelOpen(true);
+    };
+
+    const handleMultiPanelClose = () => {
+      setMultiPanelOpen(false);
+    };
+
+    const handleMultiPanelCopyLink = async (link: string) => {
+      await navigator.clipboard.writeText(link);
+    };
+
+    const handleMultiPanelDeleteOutbound = (index: number) => {
+      setConfig((currentConfig) => {
+        if (!Array.isArray(currentConfig.outbounds)) return currentConfig;
+        const nextOutbounds = [...currentConfig.outbounds];
+        nextOutbounds.splice(index, 1);
+        return orderXrayConfig({ ...currentConfig, outbounds: nextOutbounds });
+      });
       setOperationError(null);
       setIsSubmitted(false);
     };
@@ -712,7 +778,123 @@ export default function App() {
                             </Stack>
 
                             {/* Visual divider between items */}
-                            {index < (config.outbounds as any[]).length - 1 && (
+                            {index < (config.outbounds as unknown[]).length - 1 && (
+                              <Divider sx={{ mt: 2 }} />
+                            )}
+                          </Box>
+                        );
+                      })}
+                    </Stack>
+                  )}
+
+                  {/* Multi-Protocol Export Section */}
+                  {selectedField === 'outbounds' && Array.isArray(config.outbounds) && config.outbounds.length > 0 && (
+                    <Stack spacing={2} sx={{ mt: 3 }}>
+                      <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                        <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
+                          {t('app.share.exportSection')}
+                        </Typography>
+                        <Stack direction="row" spacing={1}>
+                          <Button variant="outlined" size="small" onClick={handleMultiImportOpen}>
+                            {t('app.share.importTitle')}
+                          </Button>
+                          <Button variant="outlined" size="small" onClick={handleMultiPanelOpen}>
+                            {t('app.share.panelTitle')}
+                          </Button>
+                          <Button variant="contained" size="small" onClick={handleMultiBatchImportOpen}>
+                            {t('app.share.batchTitle')}
+                          </Button>
+                        </Stack>
+                      </Stack>
+                      {config.outbounds.map((outbound, index) => {
+                        const protocol = outbound?.protocol;
+                        const isShareable = protocol === 'vmess' || protocol === 'trojan' || protocol === 'shadowsocks' || protocol === 'hysteria';
+                        const isCopied = multiCopiedIndex === index;
+                        const hasError = multiErrorIndex === index;
+
+                        if (!isShareable) {
+                          return (
+                            <Box key={index}>
+                              <Stack spacing={1.5}>
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                  <Typography variant="body2" color="text.secondary">
+                                    {t('app.share.outboundTag')}:
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight="medium">
+                                    {outbound.tag || `Outbound ${index + 1}`}
+                                  </Typography>
+                                </Stack>
+                                <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                                  {t('app.vless.notShareable')}
+                                </Typography>
+                              </Stack>
+                              {index < (config.outbounds as unknown[]).length - 1 && (
+                                <Divider sx={{ mt: 2 }} />
+                              )}
+                            </Box>
+                          );
+                        }
+
+                        return (
+                          <Box key={index}>
+                            <Stack spacing={1.5}>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Typography variant="body2" color="text.secondary">
+                                  {t('app.share.outboundTag')}:
+                                </Typography>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {outbound.tag || `Outbound ${index + 1}`}
+                                </Typography>
+                              </Stack>
+
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={async () => {
+                                  try {
+                                    const parsed = outboundToShare(outbound);
+                                    const link = formatShareLink(parsed);
+                                    setMultiLinks(prev => ({ ...prev, [index]: link }));
+                                    await navigator.clipboard.writeText(link);
+                                    setMultiCopiedIndex(index);
+                                    setMultiErrorIndex(null);
+                                    setTimeout(() => {
+                                      setMultiCopiedIndex(prev => (prev === index ? null : prev));
+                                    }, 2000);
+                                  } catch (err) {
+                                    console.warn('Clipboard write failed', err);
+                                    setMultiErrorIndex(index);
+                                    setMultiCopiedIndex(null);
+                                  }
+                                }}
+                                disabled={isCopied}
+                                sx={{ alignSelf: 'flex-start' }}
+                              >
+                                {isCopied ? t('app.share.copied') : t('app.share.copyLink')}
+                              </Button>
+
+                              {hasError && multiLinks[index] && (
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  value={multiLinks[index]}
+                                  inputProps={{ readOnly: true }}
+                                  onClick={(e) => {
+                                    (e.target as HTMLInputElement).select();
+                                  }}
+                                  InputProps={{
+                                    endAdornment: (
+                                      <InputAdornment position="end">
+                                        <Tooltip title={t('app.share.clipboardManualCopy')}>
+                                          <ContentCopyRoundedIcon fontSize="small" />
+                                        </Tooltip>
+                                      </InputAdornment>
+                                    ),
+                                  }}
+                                />
+                              )}
+                            </Stack>
+                            {index < (config.outbounds as unknown[]).length - 1 && (
                               <Divider sx={{ mt: 2 }} />
                             )}
                           </Box>
@@ -822,6 +1004,30 @@ export default function App() {
         config={orderedConfig}
         onCopyLink={handleVlessPanelCopyLink}
         onDeleteOutbound={handleVlessPanelDeleteOutbound}
+      />
+
+      <MultiImportDialog
+        open={multiImportOpen}
+        onClose={handleMultiImportClose}
+        config={orderedConfig}
+        onConfigUpdate={handleMultiImportConfirm}
+        onError={setOperationError}
+      />
+
+      <MultiBatchImportDialog
+        open={multiBatchImportOpen}
+        onClose={handleMultiBatchImportClose}
+        config={orderedConfig}
+        onConfigUpdate={handleMultiBatchConfigUpdate}
+        onError={setOperationError}
+      />
+
+      <MultiShareLinkPanel
+        open={multiPanelOpen}
+        onClose={handleMultiPanelClose}
+        config={orderedConfig}
+        onCopyLink={handleMultiPanelCopyLink}
+        onDeleteOutbound={handleMultiPanelDeleteOutbound}
       />
 
       <Box
