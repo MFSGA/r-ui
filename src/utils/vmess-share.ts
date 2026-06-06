@@ -1,6 +1,6 @@
 /* vmess-share.ts */
 
-type Dict<T = unknown> = Record<string, T>;
+import { type Dict, assertNonEmpty, assertValidPort, asDict, stringOrUndefined, numberOrUndefined, parseJsonMaybe, stringifyMaybe, deepClone } from './share-utils';
 
 export type VmessTransport =
     | "tcp"
@@ -712,51 +712,4 @@ function base64Encode(input: string): string {
     return base64.replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
 }
 
-function assertNonEmpty(value: unknown, name: string): asserts value is string {
-    if (typeof value !== "string" || value.length === 0) {
-        throw new Error(`${name} 不可省略或为空`);
-    }
-}
 
-function assertValidPort(port: unknown): asserts port is number {
-    if (!Number.isInteger(port) || Number(port) < 1 || Number(port) > 65535) {
-        throw new Error("remote-port 必须是 1 到 65535 的整数");
-    }
-}
-
-function asDict(value: unknown): Dict {
-    return value && typeof value === "object" ? (value as Dict) : {};
-}
-
-function stringOrUndefined(value: unknown): string | undefined {
-    return typeof value === "string" && value.length > 0 ? value : undefined;
-}
-
-function numberOrUndefined(value: unknown): number | undefined {
-    return typeof value === "number" && Number.isFinite(value) ? value : undefined;
-}
-
-function parseJsonMaybe(value: string): unknown {
-    const trimmed = value.trim();
-    if (!trimmed) return value;
-
-    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-        try {
-            return JSON.parse(trimmed);
-        } catch {
-            return value;
-        }
-    }
-
-    return value;
-}
-
-function stringifyMaybe(value: unknown): string | undefined {
-    if (value === undefined || value === null) return undefined;
-    if (typeof value === "string") return value;
-    return JSON.stringify(value);
-}
-
-function deepClone<T>(value: T): T {
-    return JSON.parse(JSON.stringify(value));
-}
