@@ -12,3 +12,6 @@ tmp-*.log
 .vite-dev*.log
 qa-verification.png
 .playwright-mcp/
+
+# Xray-core test artifacts
+tests/xray-protocols/logs/

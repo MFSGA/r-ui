@@ -23,8 +23,8 @@
           "serverName": "example.com",
           "certificates": [
             {
-              "certificateFile": "D:/mfsga/json-schema-mui-config-demo/tests/xray-protocols/cert.pem",
-              "keyFile": "D:/mfsga/json-schema-mui-config-demo/tests/xray-protocols/key.pem"
+              "certificateFile": "${PROJECT_ROOT}/tests/xray-protocols/cert.pem",
+              "keyFile": "${PROJECT_ROOT}/tests/xray-protocols/key.pem"
             }
           ]
         },
