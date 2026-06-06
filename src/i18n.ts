@@ -132,9 +132,9 @@ const appTranslations: Record<Locale, Record<string, string>> = {
        'app.vless.parsingProgress': '正在解析 %1/%2...',
        // Import Dialog
        'app.share.importTitle': '导入分享链接',
-       'app.share.importHint': '支持 VMess、Trojan、Shadowsocks 分享链接',
+       'app.share.importHint': '支持 VMess、Trojan、Shadowsocks、Hysteria2 分享链接',
        'app.share.importLabel': '分享链接',
-       'app.share.importPlaceholder': 'vmess://... 或 trojan://... 或 ss://...',
+       'app.share.importPlaceholder': 'vmess://... 或 trojan://... 或 ss://... 或 hysteria2://...',
        'app.share.importConfirm': '确认导入',
        'app.share.parseFailed': '解析失败：%1',
        'app.share.parsing': '解析中...',
@@ -356,9 +356,9 @@ const appTranslations: Record<Locale, Record<string, string>> = {
        'app.vless.parsingProgress': 'Parsing %1/%2...',
        // Import Dialog
        'app.share.importTitle': 'Import Share Link',
-       'app.share.importHint': 'Supports VMess, Trojan, and Shadowsocks share links',
+       'app.share.importHint': 'Supports VMess, Trojan, Shadowsocks, and Hysteria2 share links',
        'app.share.importLabel': 'Share Link',
-       'app.share.importPlaceholder': 'vmess://... or trojan://... or ss://...',
+       'app.share.importPlaceholder': 'vmess://... or trojan://... or ss://... or hysteria2://...',
        'app.share.importConfirm': 'Confirm Import',
        'app.share.parseFailed': 'Parse failed: %1',
        'app.share.parsing': 'Parsing...',
