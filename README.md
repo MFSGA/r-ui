@@ -88,3 +88,45 @@ src/
 - Vite 配置只维护 `vite.config.ts`，不要提交由 TypeScript 生成的 `vite.config.js` / `vite.config.d.ts`。
 - 构建缓存、临时日志、`dist/` 和 `node_modules/` 不进入版本管理。
 - 提交前至少运行 `pnpm typecheck`；涉及打包链路时运行 `pnpm build`。
+
+## Project Architecture
+
+### Directory Structure
+- `src/utils/share-utils.ts` — Shared helper functions for all share link protocols
+- `src/utils/vless-share.ts` — VLESS share link parser/formatter/converter
+- `src/utils/vmess-share.ts` — VMess share link parser/formatter/converter
+- `src/utils/trojan-share.ts` — Trojan share link parser/formatter/converter
+- `src/utils/shadowsocks-share.ts` — Shadowsocks share link parser/formatter/converter
+- `src/utils/hysteria2-share.ts` — Hysteria2 share link parser/formatter/converter
+- `src/utils/multi-protocol-share.ts` — Unified dispatch layer for all protocols
+- `src/multi-protocol/` — UI components for multi-protocol management
+- `src/vless/` — UI components for VLESS (legacy, maintained separately)
+- `tests/xray-protocols/` — xray-core test configurations
+
+## Protocol Support
+
+| Protocol | Parse | Format | To Xray | From Xray | Import | Export | Test Config |
+|---|---|---|---|---|---|---|---|
+| VMess | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 01-06, 16 |
+| Trojan | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 07-09, 18 |
+| Shadowsocks | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 10-11, 15 |
+| VLESS | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 12-14, 17, 19 |
+| Hysteria2 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 20 |
+
+Features: REALITY (VLESS), XHTTP (VMess, Trojan, VLESS), TLS, WebSocket, gRPC, KCP, HTTPUpgrade
+
+## Testing
+
+### Unit tests
+```bash
+pnpm test          # Run once
+pnpm test:watch    # Watch mode
+```
+
+### xray-core config verification
+```powershell
+# Using the test runner script
+.\tests\xray-protocols\run-xray-test.ps1 -ConfigPath .\tests\xray-protocols\17-vless-reality.json
+```
+
+All test configs (01-20) can be verified against xray-core 26.4.17+.
