@@ -1,4 +1,4 @@
-/* multi-protocol-share.ts - Unified dispatch layer for VMess/Trojan/Shadowsocks share links */
+/* multi-protocol-share.ts - Unified dispatch layer for VMess/Trojan/Shadowsocks/Hysteria2/VLESS share links */
 
 import {
   parseVmessShareLink,
@@ -48,17 +48,30 @@ import {
 } from './hysteria2-share';
 import type { Hy2Share, XrayOutbound as Hy2Outbound } from './hysteria2-share';
 
+import {
+  parseVlessShareLink,
+  formatVlessShareLink,
+  vlessShareToXrayOutbound,
+  outboundToVlessShare,
+  importVlessShareToXrayConfig,
+  importVlessShareToXrayConfigJson,
+  exportVlessLinksFromXrayConfig,
+  exportVlessLinksFromXrayConfigJson,
+} from './vless-share';
+import type { VlessShare, XrayOutbound as VlessOutbound } from './vless-share';
+
 /* ---------- shared types ---------- */
 
-export type ShareProtocol = 'vmess' | 'trojan' | 'shadowsocks' | 'hysteria2';
+export type ShareProtocol = 'vmess' | 'trojan' | 'shadowsocks' | 'hysteria2' | 'vless';
 
 export type ParsedShare =
   | { protocol: 'vmess'; data: VmessShare }
   | { protocol: 'trojan'; data: TrojanShare }
   | { protocol: 'shadowsocks'; data: SsShare }
-  | { protocol: 'hysteria2'; data: Hy2Share };
+  | { protocol: 'hysteria2'; data: Hy2Share }
+  | { protocol: 'vless'; data: VlessShare };
 
-export type AnyXrayOutbound = VmessOutbound | TrojanOutbound | SsOutbound | Hy2Outbound;
+export type AnyXrayOutbound = VmessOutbound | TrojanOutbound | SsOutbound | Hy2Outbound | VlessOutbound;
 
 export interface ParseOptions {
   strict?: boolean;
@@ -124,7 +137,12 @@ export function parseShareLink(rawLink: string, options: ParseOptions = {}): Par
     return { protocol: 'hysteria2', data };
   }
 
-  throw new Error('不支持的分享链接协议，仅支持 vmess://、trojan://、ss://、hysteria2://、hy2://');
+  if (trimmed.startsWith('vless://')) {
+    const data = parseVlessShareLink(rawLink, options);
+    return { protocol: 'vless', data };
+  }
+
+  throw new Error('不支持的分享链接协议，仅支持 vmess://、trojan://、ss://、hysteria2://、hy2://、vless://');
 }
 
 /* ---------- unified format ---------- */
@@ -142,6 +160,8 @@ export function formatShareLink(
       return formatShadowsocksShareLink(share.data, options);
     case 'hysteria2':
       return formatHy2ShareLink(share.data, options);
+    case 'vless':
+      return formatVlessShareLink(share.data, options);
   }
 }
 
@@ -165,6 +185,8 @@ export function shareToXrayOutbound(
       return shadowsocksShareToXrayOutbound(input.data, options);
     case 'hysteria2':
       return hy2ShareToXrayOutbound(input.data, options);
+    case 'vless':
+      return vlessShareToXrayOutbound(input.data, options);
   }
 }
 
@@ -196,6 +218,11 @@ export function outboundToShare(
     return { protocol: 'hysteria2', data };
   }
 
+  if (protocol === 'vless') {
+    const data = outboundToVlessShare(outbound, options);
+    return { protocol: 'vless', data };
+  }
+
   throw new Error(`不支持的协议: ${protocol}`);
 }
 
@@ -221,6 +248,12 @@ function narrowShadowsocksMode(mode: ImportOptions['mode']): import('./shadowsoc
 
 function narrowHysteria2Mode(mode: ImportOptions['mode']): import('./hysteria2-share').ImportOptions['mode'] {
   if (mode === 'replaceFirst') return 'replaceFirstHysteria2';
+  if (mode === 'append' || mode === 'replaceByTag') return mode;
+  return undefined;
+}
+
+function narrowVlessMode(mode: ImportOptions['mode']): import('./vless-share').ImportOptions['mode'] {
+  if (mode === 'replaceFirst') return 'replaceFirstVless';
   if (mode === 'append' || mode === 'replaceByTag') return mode;
   return undefined;
 }
@@ -256,6 +289,12 @@ export function importShareToXrayConfig(
         config,
         parsed.data,
         { ...options, mode: narrowHysteria2Mode(options.mode) },
+      );
+    case 'vless':
+      return importVlessShareToXrayConfig(
+        config,
+        parsed.data,
+        { ...options, mode: narrowVlessMode(options.mode) },
       );
   }
 }
@@ -304,6 +343,10 @@ export function exportLinksFromXrayConfig(
       } else if (protocol === 'hysteria') {
         const share = outboundToHy2Share(outbound, { strict: options.strict ?? true });
         const link = formatHy2ShareLink(share, { strict: options.strict ?? true, omitDefaults: options.omitDefaults ?? false });
+        links.push({ index, link });
+      } else if (protocol === 'vless') {
+        const share = outboundToVlessShare(outbound, { strict: options.strict ?? true });
+        const link = formatVlessShareLink(share, { strict: options.strict ?? true, omitDefaults: options.omitDefaults ?? false });
         links.push({ index, link });
       }
     } catch {

@@ -59,6 +59,8 @@ function getProtocolInfo(share: ParsedShare): string {
       return `${share.data.method}${share.data.params.plugin ? ` / plugin:${share.data.params.plugin}` : ''}`;
     case 'hysteria2':
       return `hysteria2 / ${share.data.params.congestion ?? 'bbr'}`;
+    case 'vless':
+      return `${share.data.params.type} / ${share.data.params.security}`;
   }
 }
 

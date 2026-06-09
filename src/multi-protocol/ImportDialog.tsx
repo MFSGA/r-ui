@@ -89,6 +89,20 @@ function buildParsedFields(
       );
       break;
     }
+    case 'vless': {
+      const p = data.params;
+      fields.push(
+        { label: t('app.share.previewEncryption'), value: p.encryption },
+        { label: t('app.share.previewSecurity'), value: p.security },
+        { label: t('app.share.previewFlow'), value: p.flow },
+        { label: t('app.share.previewSni'), value: p.sni },
+        { label: t('app.share.previewFp'), value: p.fp },
+        { label: t('app.share.previewPath'), value: p.path },
+        { label: t('app.share.previewHost'), value: p.host },
+        { label: t('app.share.previewServiceName'), value: p.serviceName },
+      );
+      break;
+    }
   }
 
   return fields.filter((f) => f.value !== undefined && f.value !== '');

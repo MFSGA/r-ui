@@ -62,7 +62,7 @@ function extractSecurity(streamSettings?: Record<string, unknown>): string {
   return (streamSettings.security as string) ?? 'none';
 }
 
-function protocolColor(protocol: string): 'primary' | 'warning' | 'success' | 'info' {
+function protocolColor(protocol: string): 'primary' | 'warning' | 'success' | 'info' | 'secondary' {
   switch (protocol) {
     case 'VMess':
       return 'primary';
@@ -72,6 +72,8 @@ function protocolColor(protocol: string): 'primary' | 'warning' | 'success' | 'i
       return 'success';
     case 'Hy2':
       return 'info';
+    case 'VLESS':
+      return 'secondary';
     default:
       return 'primary';
   }
@@ -86,7 +88,7 @@ export default function MultiShareLinkPanel({
 }: MultiShareLinkPanelProps) {
   const { t } = useI18n();
   const [searchText, setSearchText] = useState('');
-  const [protocolFilter, setProtocolFilter] = useState<'all' | 'VMess' | 'Trojan' | 'SS' | 'Hy2'>('all');
+  const [protocolFilter, setProtocolFilter] = useState<'all' | 'VMess' | 'Trojan' | 'SS' | 'Hy2' | 'VLESS'>('all');
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
 
@@ -96,7 +98,7 @@ export default function MultiShareLinkPanel({
     return config.outbounds
       .map((outbound, index) => {
         const protocol = outbound?.protocol;
-        if (protocol !== 'vmess' && protocol !== 'trojan' && protocol !== 'shadowsocks' && protocol !== 'hysteria') return null;
+        if (protocol !== 'vmess' && protocol !== 'trojan' && protocol !== 'shadowsocks' && protocol !== 'hysteria' && protocol !== 'vless') return null;
 
         try {
           const parsed = outboundToShare(outbound as Record<string, unknown>);
@@ -106,7 +108,7 @@ export default function MultiShareLinkPanel({
           return {
             originalIndex: index,
             tag: (outbound.tag as string) ?? `Outbound ${index + 1}`,
-            protocol: protocol === 'vmess' ? 'VMess' : protocol === 'trojan' ? 'Trojan' : protocol === 'shadowsocks' ? 'SS' : 'Hy2',
+            protocol: protocol === 'vless' ? 'VLESS' : protocol === 'vmess' ? 'VMess' : protocol === 'trojan' ? 'Trojan' : protocol === 'shadowsocks' ? 'SS' : 'Hy2',
             address: parsed.data.address,
             port: parsed.data.port,
             network: extractNetwork(streamSettings),
@@ -221,7 +223,7 @@ export default function MultiShareLinkPanel({
 
           {/* Protocol filter chips */}
           <Stack direction="row" spacing={1}>
-            {(['all', 'VMess', 'Trojan', 'SS', 'Hy2'] as const).map((p) => (
+            {(['all', 'VLESS', 'VMess', 'Trojan', 'SS', 'Hy2'] as const).map((p) => (
               <Chip
                 key={p}
                 label={p === 'all' ? 'All' : p}
