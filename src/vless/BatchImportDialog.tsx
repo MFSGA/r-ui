@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Badge,
-  Box,
   Button,
   CircularProgress,
   Dialog,
@@ -22,7 +21,6 @@ import {
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import {
   parseVlessShareLink,
-  vlessShareToXrayOutbound,
   importVlessShareToXrayConfig,
   VlessShare,
 } from '../utils/vless-share';
@@ -148,7 +146,6 @@ export default function VlessBatchImportDialog({
       }
 
       try {
-        const outbound = vlessShareToXrayOutbound(line.share);
         currentConfig = importVlessShareToXrayConfig(currentConfig, line.share, {
           mode: importMode,
         });

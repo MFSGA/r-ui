@@ -6,9 +6,6 @@ import {
   vmessShareToXrayOutbound,
   outboundToVmessShare,
   importVmessShareToXrayConfig,
-  importVmessShareToXrayConfigJson,
-  exportVmessLinksFromXrayConfig,
-  exportVmessLinksFromXrayConfigJson,
 } from './vmess-share';
 import type { VmessShare, XrayOutbound as VmessOutbound } from './vmess-share';
 
@@ -18,9 +15,6 @@ import {
   trojanShareToXrayOutbound,
   outboundToTrojanShare,
   importTrojanShareToXrayConfig,
-  importTrojanShareToXrayConfigJson,
-  exportTrojanLinksFromXrayConfig,
-  exportTrojanLinksFromXrayConfigJson,
 } from './trojan-share';
 import type { TrojanShare, XrayOutbound as TrojanOutbound } from './trojan-share';
 
@@ -30,9 +24,6 @@ import {
   shadowsocksShareToXrayOutbound,
   outboundToShadowsocksShare,
   importShadowsocksShareToXrayConfig,
-  importShadowsocksShareToXrayConfigJson,
-  exportShadowsocksLinksFromXrayConfig,
-  exportShadowsocksLinksFromXrayConfigJson,
 } from './shadowsocks-share';
 import type { SsShare, XrayOutbound as SsOutbound } from './shadowsocks-share';
 
@@ -42,9 +33,6 @@ import {
   hy2ShareToXrayOutbound,
   outboundToHy2Share,
   importHy2ShareToXrayConfig,
-  importHy2ShareToXrayConfigJson,
-  exportHy2LinksFromXrayConfig,
-  exportHy2LinksFromXrayConfigJson,
 } from './hysteria2-share';
 import type { Hy2Share, XrayOutbound as Hy2Outbound } from './hysteria2-share';
 
@@ -54,9 +42,6 @@ import {
   vlessShareToXrayOutbound,
   outboundToVlessShare,
   importVlessShareToXrayConfig,
-  importVlessShareToXrayConfigJson,
-  exportVlessLinksFromXrayConfig,
-  exportVlessLinksFromXrayConfigJson,
 } from './vless-share';
 import type { VlessShare, XrayOutbound as VlessOutbound } from './vless-share';
 
@@ -315,10 +300,6 @@ export function exportLinksFromXrayConfig(
   config: Record<string, unknown>,
   options: ExportOptions = {},
 ): string[] {
-  const vmessLinks = exportVmessLinksFromXrayConfig(config, options);
-  const trojanLinks = exportTrojanLinksFromXrayConfig(config, options);
-  const shadowsocksLinks = exportShadowsocksLinksFromXrayConfig(config, options);
-
   // maintain original outbound order by extracting indices
   const outbounds = Array.isArray(config.outbounds) ? config.outbounds : [];
   const links: Array<{ index: number; link: string }> = [];

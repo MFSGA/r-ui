@@ -67,6 +67,7 @@ export function serializeConfigText(config: XrayConfig, format: ConfigFormat) {
     case 'yaml':
       return stringifyYaml(ordered, { lineWidth: 0 });
     case 'toml':
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TOML types don't match XrayConfig
       return TOML.stringify(ordered as any);
   }
 }

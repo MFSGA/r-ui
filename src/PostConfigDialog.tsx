@@ -43,7 +43,7 @@ export default function PostConfigDialog({
 
   const sendObject = useMemo(() => {
     try {
-      let tmp = {
+      const tmp = {
         xrayConfig: config,
       };
       console.log(tmp);
