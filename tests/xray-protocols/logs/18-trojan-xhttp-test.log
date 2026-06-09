@@ -1,5 +1,0 @@
-Xray 26.4.17 (Xray, Penetrates Everything.) b465036 (go1.26.2 windows/amd64)
-A unified platform for anti-censorship.
-2026/06/06 03:54:01.508776 [Info] infra/conf/serial: Reading config: &{Name:D:\mfsga\json-schema-mui-config-demo\tests\xray-protocols\18-trojan-xhttp.json Format:json}
-2026/06/06 03:54:01.510393 [Warning] common/errors: The feature Trojan (with no Flow, etc.) is deprecated, not recommended for using and might be removed. Please migrate to VLESS with Flow & Seed as soon as possible.
-2026/06/06 03:54:01.512518 [Warning] core: Xray 26.4.17 started

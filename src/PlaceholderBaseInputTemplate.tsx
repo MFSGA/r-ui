@@ -15,8 +15,10 @@ import { useI18n } from './i18n';
 const TYPES_THAT_SHRINK_LABEL = ['date', 'datetime-local', 'file', 'time'];
 
 export default function PlaceholderBaseInputTemplate<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RJSF convention requires any defaults
   T = any,
   S extends StrictRJSFSchema = RJSFSchema,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RJSF convention requires any defaults
   F extends FormContextType = any,
 >(props: BaseInputTemplateProps<T, S, F>) {
   const { t } = useI18n();
@@ -39,7 +41,7 @@ export default function PlaceholderBaseInputTemplate<
     options,
     schema,
     rawErrors = [],
-    registry,
+    registry: _registry,
     uiSchema: _uiSchema,
     hideError: _hideError,
     InputLabelProps,

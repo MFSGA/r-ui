@@ -1,6 +1,6 @@
 /* shadowsocks-share.ts */
 
-import { type Dict, assertNonEmpty, assertValidPort, asDict, stringOrUndefined, numberOrUndefined, deepClone, decodeUriPart, stripIpv6Brackets, formatHostForUri, toAsciiHost } from './share-utils';
+import { type Dict, assertNonEmpty, assertValidPort, asDict, stringOrUndefined, deepClone, decodeUriPart, stripIpv6Brackets, formatHostForUri } from './share-utils';
 
 export type SsMethod = string;
 
@@ -380,13 +380,13 @@ function validateShare(share: SsShare, strict: boolean): void {
 }
 
 /* Shadowsocks 链接格式中不包含传输层 / TLS 参数，以下四个函数保留为空以保持模式一致 */
-function applyTransportToStreamSettings(_p: SsShareParams, _stream: Dict): void {}
+function _applyTransportToStreamSettings(_p: SsShareParams, _stream: Dict): void {}
 
-function applySecurityToStreamSettings(_p: SsShareParams, _stream: Dict): void {}
+function _applySecurityToStreamSettings(_p: SsShareParams, _stream: Dict): void {}
 
-function readTransportFromStreamSettings(_params: SsShareParams, _stream: Dict): void {}
+function _readTransportFromStreamSettings(_params: SsShareParams, _stream: Dict): void {}
 
-function readSecurityFromStreamSettings(_params: SsShareParams, _stream: Dict): void {}
+function _readSecurityFromStreamSettings(_params: SsShareParams, _stream: Dict): void {}
 
 function readSsEndpoint(outbound: Dict): {
     address: string;
@@ -445,12 +445,12 @@ function encodeSsBase64(str: string): string {
     return btoa(str);
 }
 
-function shareTypeToXrayNetwork(_type: string, _preferRaw: boolean): string {
-    return _preferRaw ? "raw" : "tcp";
+function _shareTypeToXrayNetwork(_type: string, _preferRaw: boolean): string {
+  return _preferRaw ? "raw" : "tcp";
 }
 
-function xrayNetworkToShareType(_network: string): string {
-    return "tcp";
+function _xrayNetworkToShareType(_network: string): string {
+  return "tcp";
 }
 
 function assignString<K extends keyof SsShareParams>(
@@ -464,7 +464,7 @@ function assignString<K extends keyof SsShareParams>(
     (target[key] as unknown) = value;
 }
 
-function assignNumber<K extends keyof SsShareParams>(
+function _assignNumber<K extends keyof SsShareParams>(
     target: SsShareParams,
     key: K,
     value: string | undefined,

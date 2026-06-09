@@ -21,8 +21,10 @@ type CollapsibleObjectFieldTemplateExtraProps = {
 };
 
 export default function CollapsibleObjectFieldTemplate<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RJSF convention requires any defaults
   T = any,
   S extends StrictRJSFSchema = RJSFSchema,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RJSF convention requires any defaults
   F extends FormContextType = any,
 >(props: ObjectFieldTemplateProps<T, S, F> & CollapsibleObjectFieldTemplateExtraProps) {
   const { locale, t } = useI18n();

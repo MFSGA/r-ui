@@ -1,6 +1,6 @@
 /* hysteria2-share.ts */
 
-import { type Dict, assertNonEmpty, assertValidPort, asDict, stringOrUndefined, numberOrUndefined, parseJsonMaybe, stringifyMaybe, deepClone, decodeUriPart, stripIpv6Brackets, formatHostForUri, toAsciiHost } from './share-utils';
+import { type Dict, assertNonEmpty, assertValidPort, asDict, stringOrUndefined, numberOrUndefined, parseJsonMaybe, stringifyMaybe, deepClone, decodeUriPart, stripIpv6Brackets, formatHostForUri } from './share-utils';
 
 export type Hy2ObfsType = "salamander" | "gecko";
 

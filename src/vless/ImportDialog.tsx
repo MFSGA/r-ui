@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
-import { importVlessShareToXrayConfig, VlessShare } from '../utils/vless-share';
+import { importVlessShareToXrayConfig } from '../utils/vless-share';
 import { useI18n } from '../i18n';
 import { useVlessValidation } from './useVlessValidation';
 import type { XrayConfig } from '../schema';
