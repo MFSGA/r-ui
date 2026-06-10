@@ -132,7 +132,10 @@ export default function App() {
   const { locale, setLocale, t, translateString, transformValidationErrors } = useI18n();
   const [config, setConfig] = useState<XrayConfig>(() => createDefaultConfig());
   const [selectedField, setSelectedField] = useState(() => findInitialSelectedField(createDefaultConfig()));
-  const [configFormat, setConfigFormat] = useState<ConfigFormat>('json');
+  const initialFormat = (typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('format')
+    : null) as ConfigFormat | null;
+  const [configFormat, setConfigFormat] = useState<ConfigFormat>(initialFormat && ['json', 'json5', 'yaml', 'toml'].includes(initialFormat) ? initialFormat : 'json');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isFullJsonOpen, setIsFullJsonOpen] = useState(false);
   const [importMenuAnchorEl, setImportMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -271,7 +274,6 @@ export default function App() {
       const importedConfig = importedResult.config;
       setConfig(importedConfig);
       setSelectedField(findInitialSelectedField(importedConfig));
-      setConfigFormat(importedResult.format);
       setOperationError(null);
       setIsSubmitted(false);
     } catch {
@@ -323,7 +325,6 @@ export default function App() {
       const importedResult = parseImportedConfig(text, configFormat, detectedFormat);
       setConfig(importedResult.config);
       setSelectedField(findInitialSelectedField(importedResult.config));
-      setConfigFormat(importedResult.format);
       setOperationError(null);
       setIsSubmitted(false);
       setIsImportUrlOpen(false);
