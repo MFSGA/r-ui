@@ -1,4 +1,4 @@
-import TOML from '@iarna/toml';
+import { parse as parseToml, stringify as stringifyToml } from 'smol-toml';
 import JSON5 from 'json5';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { XrayConfig } from './schema';
@@ -52,7 +52,7 @@ export function parseConfigText(text: string, format: ConfigFormat) {
     case 'yaml':
       return parseYaml(text) as unknown;
     case 'toml':
-      return TOML.parse(text) as unknown;
+      return parseToml(text) as unknown;
   }
 }
 
@@ -67,8 +67,7 @@ export function serializeConfigText(config: XrayConfig, format: ConfigFormat) {
     case 'yaml':
       return stringifyYaml(ordered, { lineWidth: 0 });
     case 'toml':
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TOML types don't match XrayConfig
-      return TOML.stringify(ordered as any);
+      return stringifyToml(ordered as Record<string, unknown>);
   }
 }
 
