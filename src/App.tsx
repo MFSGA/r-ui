@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, MouseEvent } from 'react';
 import Form from '@rjsf/mui';
 import validator from '@rjsf/validator-ajv8';
@@ -34,7 +34,7 @@ import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import CollapsibleObjectFieldTemplate from './CollapsibleObjectFieldTemplate';
 import HysteriaAwareSecurityWidget from './HysteriaAwareSecurityWidget';
 import PlaceholderBaseInputTemplate from './PlaceholderBaseInputTemplate';
-import PostConfigDialog from './PostConfigDialog';
+const PostConfigDialog = lazy(() => import('./PostConfigDialog'));
 import { XrayFormUpdateProvider } from './XrayFormUpdateContext';
 import {
   configFormatOptions,
@@ -56,9 +56,9 @@ import {
   topLevelFields,
 } from './schema';
 import { localeOptions, useI18n } from './i18n';
-import MultiImportDialog from './multi-protocol/ImportDialog';
-import MultiBatchImportDialog from './multi-protocol/BatchImportDialog';
-import MultiShareLinkPanel from './multi-protocol/ShareLinkPanel';
+const MultiImportDialog = lazy(() => import('./multi-protocol/ImportDialog'));
+const MultiBatchImportDialog = lazy(() => import('./multi-protocol/BatchImportDialog'));
+const MultiShareLinkPanel = lazy(() => import('./multi-protocol/ShareLinkPanel'));
 import { outboundToShare, formatShareLink } from './utils/multi-protocol-share';
 
 function createDefaultConfig() {
@@ -776,37 +776,45 @@ export default function App() {
         </DialogActions>
       </Dialog>
 
-      <PostConfigDialog
-        config={orderedConfig}
-        format={configFormat}
-        onClose={() => setIsPostUrlOpen(false)}
-        onError={setOperationError}
-        open={isPostUrlOpen}
-      />
+      <Suspense fallback={null}>
+        <PostConfigDialog
+          config={orderedConfig}
+          format={configFormat}
+          onClose={() => setIsPostUrlOpen(false)}
+          onError={setOperationError}
+          open={isPostUrlOpen}
+        />
+      </Suspense>
 
-      <MultiImportDialog
-        open={multiImportOpen}
-        onClose={handleMultiImportClose}
-        config={orderedConfig}
-        onConfigUpdate={handleMultiImportConfirm}
-        onError={setOperationError}
-      />
+      <Suspense fallback={null}>
+        <MultiImportDialog
+          open={multiImportOpen}
+          onClose={handleMultiImportClose}
+          config={orderedConfig}
+          onConfigUpdate={handleMultiImportConfirm}
+          onError={setOperationError}
+        />
+      </Suspense>
 
-      <MultiBatchImportDialog
-        open={multiBatchImportOpen}
-        onClose={handleMultiBatchImportClose}
-        config={orderedConfig}
-        onConfigUpdate={handleMultiBatchConfigUpdate}
-        onError={setOperationError}
-      />
+      <Suspense fallback={null}>
+        <MultiBatchImportDialog
+          open={multiBatchImportOpen}
+          onClose={handleMultiBatchImportClose}
+          config={orderedConfig}
+          onConfigUpdate={handleMultiBatchConfigUpdate}
+          onError={setOperationError}
+        />
+      </Suspense>
 
-      <MultiShareLinkPanel
-        open={multiPanelOpen}
-        onClose={handleMultiPanelClose}
-        config={orderedConfig}
-        onCopyLink={handleMultiPanelCopyLink}
-        onDeleteOutbound={handleMultiPanelDeleteOutbound}
-      />
+      <Suspense fallback={null}>
+        <MultiShareLinkPanel
+          open={multiPanelOpen}
+          onClose={handleMultiPanelClose}
+          config={orderedConfig}
+          onCopyLink={handleMultiPanelCopyLink}
+          onDeleteOutbound={handleMultiPanelDeleteOutbound}
+        />
+      </Suspense>
 
       <Box
         component="input"

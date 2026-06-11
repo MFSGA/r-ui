@@ -8,6 +8,20 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    build: {
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [
+              { name: 'vendor-rjsf-core', test: /[\\/]node_modules[\\/]@rjsf[\\/](core|utils)[\\/]/ },
+              { name: 'vendor-rjsf-mui', test: /[\\/]node_modules[\\/]@rjsf[\\/](mui|validator-ajv8)[\\/]/ },
+              { name: 'vendor-mui', test: /[\\/]node_modules[\\/](@mui|@emotion)[\\/]/ },
+              { name: 'vendor-formats', test: /[\\/]node_modules[\\/](yaml|json5|smol-toml)[\\/]/ },
+            ],
+          },
+        },
+      },
+    },
     server: {
       host: '0.0.0.0',
       port: devPort,
