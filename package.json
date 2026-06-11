@@ -33,7 +33,6 @@
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "@fontsource/roboto": "5.2.10",
-    "@iarna/toml": "^2.2.5",
     "@mui/icons-material": "7.3.9",
     "@mui/material": "7.3.9",
     "@noble/curves": "^2.2.0",
@@ -44,6 +43,7 @@
     "json5": "^2.2.3",
     "react": "19.2.5",
     "react-dom": "19.2.5",
+    "smol-toml": "^1.6.1",
     "yaml": "^2.8.3"
   },
   "devDependencies": {
