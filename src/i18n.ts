@@ -240,7 +240,9 @@ const appTranslations: Record<Locale, Record<string, string>> = {
     'template.tlsWizard.step.behavior': '行为',
     'template.tlsWizard.step.version': '版本与算法',
     'template.tlsWizard.step.certificates': '证书',
-    'template.tlsWizard.step.ech': 'ECH 高级',
+        'template.tlsWizard.step.ech': 'ECH 高级',
+        'app.collapseAll': '收起全部',
+        'app.expandAll': '展开全部',
   },
   'en-US': {
     'app.chip.react': 'React + TypeScript + MUI + rjsf',
@@ -468,7 +470,9 @@ const appTranslations: Record<Locale, Record<string, string>> = {
     'template.tlsWizard.step.behavior': 'Behavior',
     'template.tlsWizard.step.version': 'Versions & Algorithms',
     'template.tlsWizard.step.certificates': 'Certificates',
-    'template.tlsWizard.step.ech': 'ECH Advanced',
+        'template.tlsWizard.step.ech': 'ECH Advanced',
+        'app.collapseAll': 'Collapse All',
+        'app.expandAll': 'Expand All',
   },
 };
 

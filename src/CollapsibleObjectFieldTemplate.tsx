@@ -14,8 +14,10 @@ import type { FormContextType, ObjectFieldTemplateProps, RJSFSchema, StrictRJSFS
 import { buttonId, canExpand } from '@rjsf/utils';
 import RealitySettingsWizardDialog from './RealitySettingsWizardDialog';
 import TlsSettingsWizardDialog from './TlsSettingsWizardDialog';
+import { useState } from 'react';
 import { useI18n } from './i18n';
 import { useXrayFormUpdate, type UpdateSelectedFieldPath } from './XrayFormUpdateContext';
+import { useAccordionCollapse } from './AccordionCollapseContext';
 
 type CollapsibleObjectFieldTemplateExtraProps = {
   updateSelectedFieldPath?: UpdateSelectedFieldPath;
@@ -79,6 +81,9 @@ export default function CollapsibleObjectFieldTemplate<
   const updateRealitySettings = updateSelectedFieldPath ?? contextUpdateSelectedFieldPath;
   const accordionId = fieldPathId.path.length > 0 ? `accordion-${fieldPathId.path.join('-')}` : 'accordion-root';
   const accordionDetailsId = `${accordionId}-details`;
+  const { collapsedAll, setCollapsedAll } = useAccordionCollapse();
+  const [expandedLocal, setExpandedLocal] = useState(isRootObject);
+  const isExpanded = collapsedAll && !isRootObject ? false : expandedLocal;
 
   if (isTlsSettingsObject) {
     return (
@@ -108,7 +113,13 @@ export default function CollapsibleObjectFieldTemplate<
 
   return (
     <Accordion
-      defaultExpanded={isRootObject}
+      expanded={isExpanded}
+      onChange={(_, nextExpanded) => {
+        if (collapsedAll && nextExpanded) {
+          setCollapsedAll(false);
+        }
+        setExpandedLocal(nextExpanded);
+      }}
       disableGutters
       elevation={0}
       aria-label={objectTitle}
