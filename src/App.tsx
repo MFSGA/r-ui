@@ -31,11 +31,14 @@ import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
+import UnfoldLessRoundedIcon from '@mui/icons-material/UnfoldLessRounded';
+import UnfoldMoreRoundedIcon from '@mui/icons-material/UnfoldMoreRounded';
 import CollapsibleObjectFieldTemplate from './CollapsibleObjectFieldTemplate';
 import HysteriaAwareSecurityWidget from './HysteriaAwareSecurityWidget';
 import PlaceholderBaseInputTemplate from './PlaceholderBaseInputTemplate';
 const PostConfigDialog = lazy(() => import('./PostConfigDialog'));
 import { XrayFormUpdateProvider } from './XrayFormUpdateContext';
+import { AccordionCollapseProvider, useAccordionCollapse } from './AccordionCollapseContext';
 import {
   configFormatOptions,
   detectConfigFormat,
@@ -61,6 +64,20 @@ const MultiBatchImportDialog = lazy(() => import('./multi-protocol/BatchImportDi
 const MultiShareLinkPanel = lazy(() => import('./multi-protocol/ShareLinkPanel'));
 import { outboundToShare, formatShareLink } from './utils/multi-protocol-share';
 import ErrorBoundary from './ErrorBoundary';
+
+function CollapseToggleButton() {
+  const { collapsedAll, setCollapsedAll } = useAccordionCollapse();
+  const { t } = useI18n();
+  return (
+    <Button
+      variant="text"
+      onClick={() => setCollapsedAll(!collapsedAll)}
+      startIcon={collapsedAll ? <UnfoldMoreRoundedIcon /> : <UnfoldLessRoundedIcon />}
+    >
+      {collapsedAll ? t('app.expandAll') : t('app.collapseAll')}
+    </Button>
+  );
+}
 
 function createDefaultConfig() {
   return orderXrayConfig(structuredClone(defaultConfig));
@@ -496,7 +513,8 @@ export default function App() {
                   {t('app.importHint')}
                 </Typography>
 
-                <XrayFormUpdateProvider value={updateSelectedFieldPath}>
+                <AccordionCollapseProvider>
+                  <XrayFormUpdateProvider value={updateSelectedFieldPath}>
                   <Form
                     key={`${selectedField}-${locale}`}
                     schema={selectedSchema}
@@ -541,9 +559,11 @@ export default function App() {
                       >
                         {t('app.downloadConfig')}
                       </Button>
+                      <CollapseToggleButton />
                     </Stack>
                   </Form>
                 </XrayFormUpdateProvider>
+              </AccordionCollapseProvider>
 
                 <Menu anchorEl={importMenuAnchorEl} open={isImportMenuOpen} onClose={handleImportMenuClose}>
                   <MenuItem onClick={handleImportFileClick}>{t('app.importFromFile')}</MenuItem>
