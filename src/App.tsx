@@ -60,6 +60,7 @@ const MultiImportDialog = lazy(() => import('./multi-protocol/ImportDialog'));
 const MultiBatchImportDialog = lazy(() => import('./multi-protocol/BatchImportDialog'));
 const MultiShareLinkPanel = lazy(() => import('./multi-protocol/ShareLinkPanel'));
 import { outboundToShare, formatShareLink } from './utils/multi-protocol-share';
+import ErrorBoundary from './ErrorBoundary';
 
 function createDefaultConfig() {
   return orderXrayConfig(structuredClone(defaultConfig));
@@ -395,7 +396,8 @@ export default function App() {
     };
 
   return (
-    <Box
+    <ErrorBoundary>
+      <Box
       sx={{
         minHeight: '100vh',
         background:
@@ -825,5 +827,6 @@ export default function App() {
         onChange={handleImportFileChange}
       />
     </Box>
+    </ErrorBoundary>
   );
 }
