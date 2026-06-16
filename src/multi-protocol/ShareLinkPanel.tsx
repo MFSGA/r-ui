@@ -24,11 +24,13 @@ import {
 } from '@mui/material';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
+import QrCodeIcon from '@mui/icons-material/QrCode';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import { outboundToShare, formatShareLink } from '../utils/multi-protocol-share';
 import { useI18n } from '../i18n';
 import type { XrayConfig } from '../schema';
+import QrCodeDialog from './QrCodeDialog';
 
 interface MultiShareLinkPanelProps {
   config: XrayConfig;
@@ -91,6 +93,8 @@ export default function MultiShareLinkPanel({
   const [protocolFilter, setProtocolFilter] = useState<'all' | 'VMess' | 'Trojan' | 'SS' | 'Hy2' | 'VLESS'>('all');
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
+  const [qrLink, setQrLink] = useState<string | null>(null);
+  const [qrTag, setQrTag] = useState<string>('');
 
   const rows: ShareRow[] = useMemo(() => {
     if (!Array.isArray(config.outbounds)) return [];
@@ -171,6 +175,15 @@ export default function MultiShareLinkPanel({
 
   const handleDeleteCancel = () => {
     setDeleteConfirmIndex(null);
+  };
+
+  const handleQrOpen = (link: string, tag: string) => {
+    setQrLink(link);
+    setQrTag(tag);
+  };
+
+  const handleQrClose = () => {
+    setQrLink(null);
   };
 
   const handleClose = () => {
@@ -327,6 +340,15 @@ export default function MultiShareLinkPanel({
                         </TableCell>
                         <TableCell align="right">
                           <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                            <Tooltip title={t('app.share.qrCode')}>
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => handleQrOpen(row.shareLink, row.tag)}
+                              >
+                                <QrCodeIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                             <Tooltip title={t('app.share.panelDelete')}>
                               <IconButton
                                 size="small"
@@ -352,6 +374,12 @@ export default function MultiShareLinkPanel({
           {t('app.cancel')}
         </Button>
       </DialogActions>
+      <QrCodeDialog
+        open={qrLink !== null}
+        onClose={handleQrClose}
+        link={qrLink ?? ''}
+        tag={qrTag}
+      />
     </Dialog>
   );
 }
