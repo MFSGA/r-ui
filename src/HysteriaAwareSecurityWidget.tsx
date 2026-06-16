@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { MenuItem, TextField } from '@mui/material';
+import { MenuItem, TextField, Tooltip } from '@mui/material';
 import type { WidgetProps } from '@rjsf/utils';
 import { useI18n } from './i18n';
 
@@ -34,30 +34,41 @@ export default function HysteriaAwareSecurityWidget(props: WidgetProps) {
     : rawErrors?.[0] ?? (required ? ' ' : '');
 
   return (
-    <TextField
-      select
-      fullWidth
-      id={id}
-      label={label}
-      value={displayedValue}
-      onChange={(event) => onChange(event.target.value === '' ? undefined : event.target.value)}
-      required={required}
-      disabled={disabled || readonly || isHysteriaNetwork}
-      error={errorCount > 0}
-      helperText={helperText}
-      margin="normal"
+    <Tooltip
+      title={isHysteriaNetwork ? t('template.hysteriaSecurityHelper') : ''}
+      placement="right"
+      disableHoverListener={!isHysteriaNetwork}
+      disableFocusListener={!isHysteriaNetwork}
+      disableTouchListener={!isHysteriaNetwork}
     >
-      {!required && !isHysteriaNetwork ? (
-        <MenuItem value="">
-          <em>{t('template.selectPlaceholder')}</em>
-        </MenuItem>
-      ) : null}
-      {displayedOptions.map((option) => (
-        <MenuItem key={String(option.value)} value={option.value as string}>
-          {String(option.label)}
-        </MenuItem>
-      ))}
-    </TextField>
+      <TextField
+        select
+        fullWidth
+        id={id}
+        label={label}
+        value={displayedValue}
+        onChange={(event) => onChange(event.target.value === '' ? undefined : event.target.value)}
+        required={required}
+        disabled={disabled || readonly || isHysteriaNetwork}
+        error={errorCount > 0}
+        helperText={helperText}
+        margin="normal"
+        InputProps={{
+          'aria-label': isHysteriaNetwork ? t('template.hysteriaSecurityHelper') : label,
+        }}
+      >
+        {!required && !isHysteriaNetwork ? (
+          <MenuItem value="">
+            <em>{t('template.selectPlaceholder')}</em>
+          </MenuItem>
+        ) : null}
+        {displayedOptions.map((option) => (
+          <MenuItem key={String(option.value)} value={option.value as string}>
+            {String(option.label)}
+          </MenuItem>
+        ))}
+      </TextField>
+    </Tooltip>
   );
 }
 

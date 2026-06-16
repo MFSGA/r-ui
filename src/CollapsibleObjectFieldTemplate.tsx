@@ -7,6 +7,7 @@ import {
   Button,
   Chip,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import type { FormContextType, ObjectFieldTemplateProps, RJSFSchema, StrictRJSFSchema } from '@rjsf/utils';
@@ -76,6 +77,8 @@ export default function CollapsibleObjectFieldTemplate<
     ('privateKey' in schemaProperties && 'publicKey' in schemaProperties && 'shortIds' in schemaProperties);
   const canAddProperty = canExpand<T, S, F>(schema, uiSchema, formData);
   const updateRealitySettings = updateSelectedFieldPath ?? contextUpdateSelectedFieldPath;
+  const accordionId = fieldPathId.path.length > 0 ? `accordion-${fieldPathId.path.join('-')}` : 'accordion-root';
+  const accordionDetailsId = `${accordionId}-details`;
 
   if (isTlsSettingsObject) {
     return (
@@ -108,6 +111,7 @@ export default function CollapsibleObjectFieldTemplate<
       defaultExpanded={isRootObject}
       disableGutters
       elevation={0}
+      aria-label={objectTitle}
       sx={{
         position: 'relative',
         border: '1px solid',
@@ -118,7 +122,7 @@ export default function CollapsibleObjectFieldTemplate<
         },
       }}
     >
-      <AccordionSummary component="div" expandIcon={<ExpandMoreRoundedIcon />}>
+      <AccordionSummary component="div" expandIcon={<ExpandMoreRoundedIcon />} aria-controls={accordionDetailsId}>
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
           <Typography variant={isRootObject ? 'h6' : 'subtitle1'} sx={{ fontWeight: 700 }}>
             {objectTitle}
@@ -128,7 +132,7 @@ export default function CollapsibleObjectFieldTemplate<
         </Stack>
       </AccordionSummary>
 
-      <AccordionDetails>
+      <AccordionDetails id={accordionDetailsId}>
         <Stack spacing={2}>
           {description ? (
             <Typography variant="body2" color="text.secondary">
@@ -156,9 +160,11 @@ export default function CollapsibleObjectFieldTemplate<
           ) : null}
 
           {visibleProperties.length === 0 && !canAddProperty ? (
-            <Button disabled variant="outlined">
-              {t('template.noEditableFields')}
-            </Button>
+            <Tooltip title={t('template.noEditableFields')}>
+              <Button disabled variant="outlined">
+                {t('template.noEditableFields')}
+              </Button>
+            </Tooltip>
           ) : null}
         </Stack>
       </AccordionDetails>
