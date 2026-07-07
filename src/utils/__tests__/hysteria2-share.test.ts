@@ -9,7 +9,6 @@ import {
   exportHy2LinksFromXrayConfig,
   exportHy2LinksFromXrayConfigJson,
   type Hy2Share,
-  type XrayOutbound,
 } from '../hysteria2-share';
 
 // ---------------------------------------------------------------------------
@@ -532,9 +531,7 @@ describe('outboundToHy2Share', () => {
       ...MINIMAL_OUTBOUND,
       streamSettings: {
         ...MINIMAL_OUTBOUND.streamSettings,
-        udpmasks: [
-          { type: 'salamander', settings: { password: 'opass' } },
-        ],
+        udpmasks: [{ type: 'salamander', settings: { password: 'opass' } }],
       },
     };
     const share = outboundToHy2Share(outbound);
@@ -656,12 +653,15 @@ describe('round-trip (parse → outbound → share → format)', () => {
       expect(reparsed.name).toBe(parsed.name);
       // Check the main params
       if (parsed.params.sni !== undefined) expect(reparsed.params.sni).toBe(parsed.params.sni);
-      if (parsed.params.insecure !== undefined) expect(reparsed.params.insecure).toBe(parsed.params.insecure);
+      if (parsed.params.insecure !== undefined)
+        expect(reparsed.params.insecure).toBe(parsed.params.insecure);
       if (parsed.params.up !== undefined) expect(reparsed.params.up).toBe(parsed.params.up);
       if (parsed.params.down !== undefined) expect(reparsed.params.down).toBe(parsed.params.down);
-      if (parsed.params.congestion !== undefined) expect(reparsed.params.congestion).toBe(parsed.params.congestion);
+      if (parsed.params.congestion !== undefined)
+        expect(reparsed.params.congestion).toBe(parsed.params.congestion);
       if (parsed.params.obfs !== undefined) expect(reparsed.params.obfs).toBe(parsed.params.obfs);
-      if (parsed.params.portHopping !== undefined) expect(reparsed.params.portHopping).toBe(parsed.params.portHopping);
+      if (parsed.params.portHopping !== undefined)
+        expect(reparsed.params.portHopping).toBe(parsed.params.portHopping);
     });
   }
 });
@@ -718,9 +718,7 @@ describe('importHy2ShareToXrayConfig', () => {
 
   it('replaceByTag appends when tag not found', () => {
     const config = {
-      outbounds: [
-        { protocol: 'vmess', tag: 'other' },
-      ],
+      outbounds: [{ protocol: 'vmess', tag: 'other' }],
     };
     const share = makeShare({ name: 'new-node' });
     const result = importHy2ShareToXrayConfig(config, share, { mode: 'replaceByTag' });
@@ -730,8 +728,9 @@ describe('importHy2ShareToXrayConfig', () => {
 
   it('replaceByTag throws when outbound has no tag', () => {
     const share = makeShare({ name: undefined });
-    expect(() => importHy2ShareToXrayConfig({}, share, { mode: 'replaceByTag' }))
-      .toThrow('replaceByTag 需要提供 tag 或链接 name');
+    expect(() => importHy2ShareToXrayConfig({}, share, { mode: 'replaceByTag' })).toThrow(
+      'replaceByTag 需要提供 tag 或链接 name',
+    );
   });
 
   it('replaceFirstHysteria2 replaces existing hysteria outbound', () => {
@@ -742,7 +741,9 @@ describe('importHy2ShareToXrayConfig', () => {
         { protocol: 'trojan', settings: {} },
       ],
     };
-    const result = importHy2ShareToXrayConfig(config, BASIC_SHARE, { mode: 'replaceFirstHysteria2' });
+    const result = importHy2ShareToXrayConfig(config, BASIC_SHARE, {
+      mode: 'replaceFirstHysteria2',
+    });
     expect(ob(result)).toHaveLength(3);
     expect(ob(result)[0].protocol).toBe('vmess');
     expect(ob(result)[1].settings?.address).toBe('example.com');
@@ -751,19 +752,19 @@ describe('importHy2ShareToXrayConfig', () => {
 
   it('replaceFirstHysteria2 appends when no hysteria outbound exists', () => {
     const config = {
-      outbounds: [
-        { protocol: 'vmess', settings: {} },
-      ],
+      outbounds: [{ protocol: 'vmess', settings: {} }],
     };
-    const result = importHy2ShareToXrayConfig(config, BASIC_SHARE, { mode: 'replaceFirstHysteria2' });
+    const result = importHy2ShareToXrayConfig(config, BASIC_SHARE, {
+      mode: 'replaceFirstHysteria2',
+    });
     expect(ob(result)).toHaveLength(2);
     expect(ob(result)[1].protocol).toBe('hysteria');
   });
 
   it('throws for unknown mode', () => {
-    expect(() =>
-      importHy2ShareToXrayConfig({}, BASIC_SHARE, { mode: 'unknown' as never })
-    ).toThrow('未知导入模式: unknown');
+    expect(() => importHy2ShareToXrayConfig({}, BASIC_SHARE, { mode: 'unknown' as never })).toThrow(
+      '未知导入模式: unknown',
+    );
   });
 });
 
