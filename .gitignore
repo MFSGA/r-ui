@@ -17,3 +17,5 @@ test-results/
 
 # Xray-core test artifacts
 tests/xray-protocols/logs/
+
+.direnv/
