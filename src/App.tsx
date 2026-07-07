@@ -15,7 +15,6 @@ import {
   DialogTitle,
   Divider,
   FormControl,
-  InputAdornment,
   InputLabel,
   MenuItem,
   Menu,
@@ -23,14 +22,12 @@ import {
   Select,
   Stack,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
-import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import UnfoldLessRoundedIcon from '@mui/icons-material/UnfoldLessRounded';
 import UnfoldMoreRoundedIcon from '@mui/icons-material/UnfoldMoreRounded';
 import CollapsibleObjectFieldTemplate from './CollapsibleObjectFieldTemplate';
@@ -62,7 +59,7 @@ import { localeOptions, useI18n } from './i18n';
 const MultiImportDialog = lazy(() => import('./multi-protocol/ImportDialog'));
 const MultiBatchImportDialog = lazy(() => import('./multi-protocol/BatchImportDialog'));
 const MultiShareLinkPanel = lazy(() => import('./multi-protocol/ShareLinkPanel'));
-import { outboundToShare, formatShareLink } from './utils/multi-protocol-share';
+const ShareExportSection = lazy(() => import('./multi-protocol/ShareExportSection'));
 import ErrorBoundary from './ErrorBoundary';
 
 function CollapseToggleButton() {
@@ -86,7 +83,10 @@ function createDefaultConfig() {
 const initialSelectedField = topLevelFields.includes('inbounds') ? 'inbounds' : topLevelFields[0];
 
 function findInitialSelectedField(config: XrayConfig) {
-  return topLevelFields.find((field) => Object.prototype.hasOwnProperty.call(config, field)) ?? initialSelectedField;
+  return (
+    topLevelFields.find((field) => Object.prototype.hasOwnProperty.call(config, field)) ??
+    initialSelectedField
+  );
 }
 
 function setValueAtPath(rootValue: unknown, path: Array<string | number>, nextValue: unknown) {
@@ -149,33 +149,42 @@ function isArrayIndexSegment(segment: string | number) {
 export default function App() {
   const { locale, setLocale, t, translateString, transformValidationErrors } = useI18n();
   const [config, setConfig] = useState<XrayConfig>(() => createDefaultConfig());
-  const [selectedField, setSelectedField] = useState(() => findInitialSelectedField(createDefaultConfig()));
-  const initialFormat = (typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('format')
-    : null) as ConfigFormat | null;
-  const [configFormat, setConfigFormat] = useState<ConfigFormat>(initialFormat && ['json', 'json5', 'yaml', 'toml'].includes(initialFormat) ? initialFormat : 'json');
+  const [selectedField, setSelectedField] = useState(() =>
+    findInitialSelectedField(createDefaultConfig()),
+  );
+  const initialFormat = (
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('format') : null
+  ) as ConfigFormat | null;
+  const [configFormat, setConfigFormat] = useState<ConfigFormat>(
+    initialFormat && ['json', 'json5', 'yaml', 'toml'].includes(initialFormat)
+      ? initialFormat
+      : 'json',
+  );
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isFullJsonOpen, setIsFullJsonOpen] = useState(false);
   const [importMenuAnchorEl, setImportMenuAnchorEl] = useState<null | HTMLElement>(null);
-   const [isImportUrlOpen, setIsImportUrlOpen] = useState(false);
-   const [importUrl, setImportUrl] = useState('');
-   const [isImportingUrl, setIsImportingUrl] = useState(false);
-   const [isPostUrlOpen, setIsPostUrlOpen] = useState(false);
-   const [operationError, setOperationError] = useState<string | null>(null);
-    const importInputRef = useRef<HTMLInputElement | null>(null);
-    
-       // Multi-protocol states
-      const [multiImportOpen, setMultiImportOpen] = useState(false);
-      const [multiBatchImportOpen, setMultiBatchImportOpen] = useState(false);
-      const [multiPanelOpen, setMultiPanelOpen] = useState(false);
-      const [multiCopiedIndex, setMultiCopiedIndex] = useState<number | null>(null);
-      const [multiErrorIndex, setMultiErrorIndex] = useState<number | null>(null);
-      const [multiLinks, setMultiLinks] = useState<Record<number, string>>({});
+  const [isImportUrlOpen, setIsImportUrlOpen] = useState(false);
+  const [importUrl, setImportUrl] = useState('');
+  const [isImportingUrl, setIsImportingUrl] = useState(false);
+  const [isPostUrlOpen, setIsPostUrlOpen] = useState(false);
+  const [operationError, setOperationError] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Multi-protocol states
+  const [multiImportOpen, setMultiImportOpen] = useState(false);
+  const [multiBatchImportOpen, setMultiBatchImportOpen] = useState(false);
+  const [multiPanelOpen, setMultiPanelOpen] = useState(false);
 
   const orderedConfig = useMemo(() => orderXrayConfig(config), [config]);
   const fullJsonPreview = useMemo(() => JSON.stringify(orderedConfig, null, 2), [orderedConfig]);
-  const selectedSchema = useMemo(() => getTopLevelFieldSchema(selectedField, locale), [selectedField, locale]);
-  const selectedUiSchema = useMemo(() => getTopLevelFieldUiSchema(selectedField, locale), [selectedField, locale]);
+  const selectedSchema = useMemo(
+    () => getTopLevelFieldSchema(selectedField, locale),
+    [selectedField, locale],
+  );
+  const selectedUiSchema = useMemo(
+    () => getTopLevelFieldUiSchema(selectedField, locale),
+    [selectedField, locale],
+  );
   const selectedFieldValue = config[selectedField];
   const selectedModulePreview = useMemo(() => {
     const moduleConfig =
@@ -204,7 +213,11 @@ export default function App() {
 
         return orderXrayConfig({
           ...currentConfig,
-          [selectedField]: normalizeSelectedFieldValue(selectedField, nextSelectedValue, currentConfig[selectedField]),
+          [selectedField]: normalizeSelectedFieldValue(
+            selectedField,
+            nextSelectedValue,
+            currentConfig[selectedField],
+          ),
         });
       });
       setIsSubmitted(false);
@@ -215,7 +228,10 @@ export default function App() {
     () => ({
       BaseInputTemplate: PlaceholderBaseInputTemplate,
       ObjectFieldTemplate: (props: Parameters<typeof CollapsibleObjectFieldTemplate>[0]) => (
-        <CollapsibleObjectFieldTemplate {...props} updateSelectedFieldPath={updateSelectedFieldPath} />
+        <CollapsibleObjectFieldTemplate
+          {...props}
+          updateSelectedFieldPath={updateSelectedFieldPath}
+        />
       ),
     }),
     [updateSelectedFieldPath],
@@ -234,14 +250,22 @@ export default function App() {
     setConfig((currentConfig) =>
       orderXrayConfig({
         ...currentConfig,
-        [selectedField]: normalizeSelectedFieldValue(selectedField, event.formData, currentConfig[selectedField]),
+        [selectedField]: normalizeSelectedFieldValue(
+          selectedField,
+          event.formData,
+          currentConfig[selectedField],
+        ),
       }),
     );
     setIsSubmitted(false);
   };
 
   const handleSubmit = ({ formData }: IChangeEvent<unknown>) => {
-    const nextFormData = normalizeSelectedFieldValue(selectedField, formData, config[selectedField]);
+    const nextFormData = normalizeSelectedFieldValue(
+      selectedField,
+      formData,
+      config[selectedField],
+    );
     const nextConfig = orderXrayConfig({
       ...config,
       [selectedField]: nextFormData,
@@ -249,8 +273,6 @@ export default function App() {
 
     setConfig(nextConfig);
     setIsSubmitted(true);
-    console.log(`提交得到的 Xray ${selectedField} 配置：`, nextFormData);
-    console.log('当前完整 Xray JSON 配置：', nextConfig);
   };
 
   const handleReset = () => {
@@ -334,7 +356,9 @@ export default function App() {
       const response = await fetch(parsedUrl.toString(), { credentials: 'omit' });
 
       if (!response.ok) {
-        setOperationError(t('app.importUrlFetchFailed', { status: response.status, url: parsedUrl.toString() }));
+        setOperationError(
+          t('app.importUrlFetchFailed', { status: response.status, url: parsedUrl.toString() }),
+        );
         return;
       }
 
@@ -353,500 +377,417 @@ export default function App() {
     }
   };
 
-   const handlePostUrlOpen = () => {
-     setOperationError(null);
-     setIsPostUrlOpen(true);
-   };
+  const handlePostUrlOpen = () => {
+    setOperationError(null);
+    setIsPostUrlOpen(true);
+  };
 
-    // Multi-protocol handlers
-    const handleMultiImportOpen = () => {
-      setOperationError(null);
-      setMultiImportOpen(true);
-    };
+  // Multi-protocol handlers
+  const handleMultiImportOpen = () => {
+    setOperationError(null);
+    setMultiImportOpen(true);
+  };
 
-    const handleMultiImportClose = () => {
-      setMultiImportOpen(false);
-    };
+  const handleMultiImportClose = () => {
+    setMultiImportOpen(false);
+  };
 
-    const handleMultiImportConfirm = (updatedConfig: XrayConfig) => {
-      setConfig(updatedConfig);
-      setOperationError(null);
-      setIsSubmitted(false);
-    };
+  const handleMultiImportConfirm = (updatedConfig: XrayConfig) => {
+    setConfig(updatedConfig);
+    setOperationError(null);
+    setIsSubmitted(false);
+  };
 
-    const handleMultiBatchImportOpen = () => {
-      setOperationError(null);
-      setMultiBatchImportOpen(true);
-    };
+  const handleMultiBatchImportOpen = () => {
+    setOperationError(null);
+    setMultiBatchImportOpen(true);
+  };
 
-    const handleMultiBatchImportClose = () => {
-      setMultiBatchImportOpen(false);
-    };
+  const handleMultiBatchImportClose = () => {
+    setMultiBatchImportOpen(false);
+  };
 
-    const handleMultiBatchConfigUpdate = (updatedConfig: XrayConfig) => {
-      setConfig(updatedConfig);
-      setOperationError(null);
-      setIsSubmitted(false);
-    };
+  const handleMultiBatchConfigUpdate = (updatedConfig: XrayConfig) => {
+    setConfig(updatedConfig);
+    setOperationError(null);
+    setIsSubmitted(false);
+  };
 
-    const handleMultiPanelOpen = () => {
-      setMultiPanelOpen(true);
-    };
+  const handleMultiPanelOpen = () => {
+    setMultiPanelOpen(true);
+  };
 
-    const handleMultiPanelClose = () => {
-      setMultiPanelOpen(false);
-    };
+  const handleMultiPanelClose = () => {
+    setMultiPanelOpen(false);
+  };
 
-    const handleMultiPanelCopyLink = async (link: string) => {
-      await navigator.clipboard.writeText(link);
-    };
+  const handleMultiPanelCopyLink = async (link: string) => {
+    await navigator.clipboard.writeText(link);
+  };
 
-    const handleMultiPanelDeleteOutbound = (index: number) => {
-      setConfig((currentConfig) => {
-        if (!Array.isArray(currentConfig.outbounds)) return currentConfig;
-        const nextOutbounds = [...currentConfig.outbounds];
-        nextOutbounds.splice(index, 1);
-        return orderXrayConfig({ ...currentConfig, outbounds: nextOutbounds });
-      });
-      setOperationError(null);
-      setIsSubmitted(false);
-    };
+  const handleMultiPanelDeleteOutbound = (index: number) => {
+    setConfig((currentConfig) => {
+      if (!Array.isArray(currentConfig.outbounds)) return currentConfig;
+      const nextOutbounds = [...currentConfig.outbounds];
+      nextOutbounds.splice(index, 1);
+      return orderXrayConfig({ ...currentConfig, outbounds: nextOutbounds });
+    });
+    setOperationError(null);
+    setIsSubmitted(false);
+  };
 
   return (
     <ErrorBoundary>
       <Box
-      sx={{
-        minHeight: '100vh',
-        background:
-          'linear-gradient(180deg, rgba(37,99,235,0.06) 0%, rgba(124,58,237,0.04) 100%)',
-        py: 6,
-      }}
-    >
-      <Container maxWidth="lg">
-        <Stack spacing={3}>
-          <Paper sx={{ p: { xs: 3, md: 4 } }} elevation={0}>
-            <Stack spacing={2}>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'flex-start', sm: 'center' }}>
-                <Chip label={t('app.chip.react')} color="primary" variant="outlined" />
-                <Chip label={t('app.chip.schema')} color="secondary" variant="outlined" />
-              </Stack>
-
-              <Box>
-                <Typography variant="h4" gutterBottom>
-                  {t('app.title')}
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  {t('app.subtitle')}
-                </Typography>
-              </Box>
-            </Stack>
-          </Paper>
-
-          <Stack direction={{ xs: 'column', lg: 'row' }} spacing={3} alignItems="stretch">
-            <Paper sx={{ p: 3, flex: 1.2 }} elevation={0}>
-              <Stack spacing={2.5}>
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    {t('app.form.title')}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {t('app.form.subtitle')}
-                  </Typography>
-                </Box>
-
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <FormControl fullWidth>
-                    <InputLabel id="top-level-field-label">{t('app.moduleSelect')}</InputLabel>
-                    <Select
-                      labelId="top-level-field-label"
-                      label={t('app.moduleSelect')}
-                      value={selectedField}
-                      onChange={(event) => {
-                        setSelectedField(String(event.target.value));
-                        setIsSubmitted(false);
-                      }}
-                    >
-                      {selectedFieldOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <FormControl sx={{ minWidth: 160 }}>
-                    <InputLabel id="config-format-label">{t('app.configFormat')}</InputLabel>
-                    <Select
-                      labelId="config-format-label"
-                      label={t('app.configFormat')}
-                      value={configFormat}
-                      onChange={(event) => setConfigFormat(event.target.value as ConfigFormat)}
-                    >
-                      {configFormatOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {t(option.labelKey)}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <FormControl sx={{ minWidth: 160 }}>
-                    <InputLabel id="locale-label">{t('app.language')}</InputLabel>
-                    <Select
-                      labelId="locale-label"
-                      label={t('app.language')}
-                      value={locale}
-                      onChange={(event) => setLocale(event.target.value as typeof locale)}
-                    >
-                      {localeOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+        sx={{
+          minHeight: '100vh',
+          background:
+            'linear-gradient(180deg, rgba(37,99,235,0.06) 0%, rgba(124,58,237,0.04) 100%)',
+          py: 6,
+        }}
+      >
+        <Container maxWidth="lg">
+          <Stack spacing={3}>
+            <Paper sx={{ p: { xs: 3, md: 4 } }} elevation={0}>
+              <Stack spacing={2}>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={1}
+                  alignItems={{ xs: 'flex-start', sm: 'center' }}
+                >
+                  <Chip label={t('app.chip.react')} color="primary" variant="outlined" />
+                  <Chip label={t('app.chip.schema')} color="secondary" variant="outlined" />
                 </Stack>
 
-                <Divider />
-
-                <Typography variant="body2" color="text.secondary">
-                  {t('app.importHint')}
-                </Typography>
-
-                <AccordionCollapseProvider>
-                  <XrayFormUpdateProvider value={updateSelectedFieldPath}>
-                  <Form
-                    key={`${selectedField}-${locale}`}
-                    schema={selectedSchema}
-                    uiSchema={selectedUiSchema}
-                    validator={validator}
-                    formData={selectedFieldValue}
-                    liveValidate
-                    noHtml5Validate
-                    showErrorList={false}
-                    templates={templates}
-                    widgets={widgets}
-                    formContext={formContext}
-                    translateString={translateString}
-                    transformErrors={transformValidationErrors}
-                    onChange={handleChange}
-                    onSubmit={handleSubmit}
-                  >
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2 }}>
-                      <Button type="submit" variant="contained" startIcon={<SaveRoundedIcon />}>
-                        {t('app.saveModule')}
-                      </Button>
-                      <Button variant="outlined" onClick={handleImportMenuOpen}>
-                        {t('app.importConfig')}
-                      </Button>
-                      <Button variant="outlined" onClick={handleReset} startIcon={<ReplayRoundedIcon />}>
-                        {t('app.resetModule')}
-                      </Button>
-                      <Button variant="outlined" onClick={handlePostUrlOpen} startIcon={<SendRoundedIcon />}>
-                        {t('app.postConfig')}
-                      </Button>
-                      <Button
-                        variant="text"
-                        onClick={() => {
-                          try {
-                            downloadConfigFile(config, configFormat);
-                            setOperationError(null);
-                          } catch {
-                            setOperationError(t('app.exportFailed'));
-                          }
-                        }}
-                        startIcon={<DownloadRoundedIcon />}
-                      >
-                        {t('app.downloadConfig')}
-                      </Button>
-                      <CollapseToggleButton />
-                    </Stack>
-                  </Form>
-                </XrayFormUpdateProvider>
-              </AccordionCollapseProvider>
-
-                <Menu anchorEl={importMenuAnchorEl} open={isImportMenuOpen} onClose={handleImportMenuClose}>
-                  <MenuItem onClick={handleImportFileClick}>{t('app.importFromFile')}</MenuItem>
-                  <MenuItem onClick={handleImportUrlOpen}>{t('app.importFromUrl')}</MenuItem>
-                </Menu>
-              </Stack>
-            </Paper>
-
-            <Paper sx={{ p: 3, flex: 1, minWidth: 0 }} elevation={0}>
-              <Stack spacing={2}>
                 <Box>
-                  <Typography variant="h6" gutterBottom>
-                    {t('app.module.title')}
+                  <Typography variant="h4" gutterBottom>
+                    {t('app.title')}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {t('app.module.subtitle', { field: selectedField })}
+                  <Typography variant="body1" color="text.secondary">
+                    {t('app.subtitle')}
                   </Typography>
                 </Box>
-
-                {isSubmitted ? (
-                  <Alert severity="success">{t('app.module.synced')}</Alert>
-                ) : (
-                  <Alert severity="info">{t('app.module.syncing')}</Alert>
-                )}
-
-                <Button variant="outlined" onClick={() => setIsFullJsonOpen(true)}>
-                  {t('app.showFullJson')}
-                </Button>
-
-                {operationError ? <Alert severity="error">{operationError}</Alert> : null}
-
-                 <Box
-                   component="pre"
-                   sx={{
-                     m: 0,
-                     p: 2,
-                     borderRadius: 3,
-                     bgcolor: 'grey.100',
-                     overflow: 'auto',
-                     fontSize: 13,
-                     lineHeight: 1.6,
-                     minHeight: 520,
-                   }}
-                 >
-                   {selectedModulePreview}
-                 </Box>
-                   
-                   {/* Multi-Protocol Export Section */}
-                  {selectedField === 'outbounds' && Array.isArray(config.outbounds) && config.outbounds.length > 0 && (
-                    <Stack spacing={2} sx={{ mt: 3 }}>
-                      <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-                        <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
-                          {t('app.share.exportSection')}
-                        </Typography>
-                        <Stack direction="row" spacing={1}>
-                          <Button variant="outlined" size="small" onClick={handleMultiImportOpen}>
-                            {t('app.share.importTitle')}
-                          </Button>
-                          <Button variant="outlined" size="small" onClick={handleMultiPanelOpen}>
-                            {t('app.share.panelTitle')}
-                          </Button>
-                          <Button variant="contained" size="small" onClick={handleMultiBatchImportOpen}>
-                            {t('app.share.batchTitle')}
-                          </Button>
-                        </Stack>
-                      </Stack>
-                      {config.outbounds.map((outbound, index) => {
-                        const protocol = outbound?.protocol;
-                        const isShareable = protocol === 'vless' || protocol === 'vmess' || protocol === 'trojan' || protocol === 'shadowsocks' || protocol === 'hysteria';
-                        const isCopied = multiCopiedIndex === index;
-                        const hasError = multiErrorIndex === index;
-
-                        if (!isShareable) {
-                          return (
-                            <Box key={index}>
-                              <Stack spacing={1.5}>
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                  <Typography variant="body2" color="text.secondary">
-                                    {t('app.share.outboundTag')}:
-                                  </Typography>
-                                  <Typography variant="body2" fontWeight="medium">
-                                    {outbound.tag || `Outbound ${index + 1}`}
-                                  </Typography>
-                                </Stack>
-                                <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
-                                  {t('app.vless.notShareable')}
-                                </Typography>
-                              </Stack>
-                              {index < (config.outbounds as unknown[]).length - 1 && (
-                                <Divider sx={{ mt: 2 }} />
-                              )}
-                            </Box>
-                          );
-                        }
-
-                        return (
-                          <Box key={index}>
-                            <Stack spacing={1.5}>
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <Typography variant="body2" color="text.secondary">
-                                  {t('app.share.outboundTag')}:
-                                </Typography>
-                                <Typography variant="body2" fontWeight="medium">
-                                  {outbound.tag || `Outbound ${index + 1}`}
-                                </Typography>
-                              </Stack>
-
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                onClick={async () => {
-                                  try {
-                                    const parsed = outboundToShare(outbound);
-                                    const link = formatShareLink(parsed);
-                                    setMultiLinks(prev => ({ ...prev, [index]: link }));
-                                    await navigator.clipboard.writeText(link);
-                                    setMultiCopiedIndex(index);
-                                    setMultiErrorIndex(null);
-                                    setTimeout(() => {
-                                      setMultiCopiedIndex(prev => (prev === index ? null : prev));
-                                    }, 2000);
-                                  } catch (err) {
-                                    console.warn('Clipboard write failed', err);
-                                    setMultiErrorIndex(index);
-                                    setMultiCopiedIndex(null);
-                                  }
-                                }}
-                                disabled={isCopied}
-                                sx={{ alignSelf: 'flex-start' }}
-                              >
-                                {isCopied ? t('app.share.copied') : t('app.share.copyLink')}
-                              </Button>
-
-                              {hasError && multiLinks[index] && (
-                                <TextField
-                                  fullWidth
-                                  size="small"
-                                  value={multiLinks[index]}
-                                  inputProps={{ readOnly: true }}
-                                  onClick={(e) => {
-                                    (e.target as HTMLInputElement).select();
-                                  }}
-                                  InputProps={{
-                                    endAdornment: (
-                                      <InputAdornment position="end">
-                                        <Tooltip title={t('app.share.clipboardManualCopy')}>
-                                          <ContentCopyRoundedIcon fontSize="small" />
-                                        </Tooltip>
-                                      </InputAdornment>
-                                    ),
-                                  }}
-                                />
-                              )}
-                            </Stack>
-                            {index < (config.outbounds as unknown[]).length - 1 && (
-                              <Divider sx={{ mt: 2 }} />
-                            )}
-                          </Box>
-                        );
-                      })}
-                    </Stack>
-                  )}
               </Stack>
             </Paper>
+
+            <Stack direction={{ xs: 'column', lg: 'row' }} spacing={3} alignItems="stretch">
+              <Paper sx={{ p: 3, flex: 1.2 }} elevation={0}>
+                <Stack spacing={2.5}>
+                  <Box>
+                    <Typography variant="h6" gutterBottom>
+                      {t('app.form.title')}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('app.form.subtitle')}
+                    </Typography>
+                  </Box>
+
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    <FormControl fullWidth>
+                      <InputLabel id="top-level-field-label">{t('app.moduleSelect')}</InputLabel>
+                      <Select
+                        labelId="top-level-field-label"
+                        label={t('app.moduleSelect')}
+                        value={selectedField}
+                        onChange={(event) => {
+                          setSelectedField(String(event.target.value));
+                          setIsSubmitted(false);
+                        }}
+                      >
+                        {selectedFieldOptions.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl sx={{ minWidth: 160 }}>
+                      <InputLabel id="config-format-label">{t('app.configFormat')}</InputLabel>
+                      <Select
+                        labelId="config-format-label"
+                        label={t('app.configFormat')}
+                        value={configFormat}
+                        onChange={(event) => setConfigFormat(event.target.value as ConfigFormat)}
+                      >
+                        {configFormatOptions.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {t(option.labelKey)}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+
+                    <FormControl sx={{ minWidth: 160 }}>
+                      <InputLabel id="locale-label">{t('app.language')}</InputLabel>
+                      <Select
+                        labelId="locale-label"
+                        label={t('app.language')}
+                        value={locale}
+                        onChange={(event) => setLocale(event.target.value as typeof locale)}
+                      >
+                        {localeOptions.map((option) => (
+                          <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Stack>
+
+                  <Divider />
+
+                  <Typography variant="body2" color="text.secondary">
+                    {t('app.importHint')}
+                  </Typography>
+
+                  <AccordionCollapseProvider>
+                    <XrayFormUpdateProvider value={updateSelectedFieldPath}>
+                      <Form
+                        key={`${selectedField}-${locale}`}
+                        schema={selectedSchema}
+                        uiSchema={selectedUiSchema}
+                        validator={validator}
+                        formData={selectedFieldValue}
+                        liveValidate
+                        noHtml5Validate
+                        showErrorList={false}
+                        templates={templates}
+                        widgets={widgets}
+                        formContext={formContext}
+                        translateString={translateString}
+                        transformErrors={transformValidationErrors}
+                        onChange={handleChange}
+                        onSubmit={handleSubmit}
+                      >
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2 }}>
+                          <Button type="submit" variant="contained" startIcon={<SaveRoundedIcon />}>
+                            {t('app.saveModule')}
+                          </Button>
+                          <Button variant="outlined" onClick={handleImportMenuOpen}>
+                            {t('app.importConfig')}
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            onClick={handleReset}
+                            startIcon={<ReplayRoundedIcon />}
+                          >
+                            {t('app.resetModule')}
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            onClick={handlePostUrlOpen}
+                            startIcon={<SendRoundedIcon />}
+                          >
+                            {t('app.postConfig')}
+                          </Button>
+                          <Button
+                            variant="text"
+                            onClick={() => {
+                              try {
+                                downloadConfigFile(config, configFormat);
+                                setOperationError(null);
+                              } catch {
+                                setOperationError(t('app.exportFailed'));
+                              }
+                            }}
+                            startIcon={<DownloadRoundedIcon />}
+                          >
+                            {t('app.downloadConfig')}
+                          </Button>
+                          <CollapseToggleButton />
+                        </Stack>
+                      </Form>
+                    </XrayFormUpdateProvider>
+                  </AccordionCollapseProvider>
+
+                  <Menu
+                    anchorEl={importMenuAnchorEl}
+                    open={isImportMenuOpen}
+                    onClose={handleImportMenuClose}
+                  >
+                    <MenuItem onClick={handleImportFileClick}>{t('app.importFromFile')}</MenuItem>
+                    <MenuItem onClick={handleImportUrlOpen}>{t('app.importFromUrl')}</MenuItem>
+                  </Menu>
+                </Stack>
+              </Paper>
+
+              <Paper sx={{ p: 3, flex: 1, minWidth: 0 }} elevation={0}>
+                <Stack spacing={2}>
+                  <Box>
+                    <Typography variant="h6" gutterBottom>
+                      {t('app.module.title')}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {t('app.module.subtitle', { field: selectedField })}
+                    </Typography>
+                  </Box>
+
+                  {isSubmitted ? (
+                    <Alert severity="success">{t('app.module.synced')}</Alert>
+                  ) : (
+                    <Alert severity="info">{t('app.module.syncing')}</Alert>
+                  )}
+
+                  <Button variant="outlined" onClick={() => setIsFullJsonOpen(true)}>
+                    {t('app.showFullJson')}
+                  </Button>
+
+                  {operationError ? <Alert severity="error">{operationError}</Alert> : null}
+
+                  <Box
+                    component="pre"
+                    sx={{
+                      m: 0,
+                      p: 2,
+                      borderRadius: 3,
+                      bgcolor: 'grey.100',
+                      overflow: 'auto',
+                      fontSize: 13,
+                      lineHeight: 1.6,
+                      minHeight: 520,
+                    }}
+                  >
+                    {selectedModulePreview}
+                  </Box>
+                  {selectedField === 'outbounds' &&
+                    Array.isArray(config.outbounds) &&
+                    config.outbounds.length > 0 && (
+                      <Suspense fallback={null}>
+                        <ShareExportSection
+                          outbounds={config.outbounds}
+                          onImportOpen={handleMultiImportOpen}
+                          onPanelOpen={handleMultiPanelOpen}
+                          onBatchImportOpen={handleMultiBatchImportOpen}
+                        />
+                      </Suspense>
+                    )}
+                </Stack>
+              </Paper>
+            </Stack>
           </Stack>
-        </Stack>
-      </Container>
+        </Container>
 
-      <Dialog open={isFullJsonOpen} onClose={() => setIsFullJsonOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>{t('app.fullJsonTitle')}</DialogTitle>
-        <DialogContent dividers>
-          <Box
-            component="pre"
-            sx={{
-              m: 0,
-              p: 2,
-              borderRadius: 3,
-              bgcolor: 'grey.100',
-              overflow: 'auto',
-              fontSize: 13,
-              lineHeight: 1.6,
-              maxHeight: '70vh',
-            }}
-          >
-            {fullJsonPreview}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              try {
-                downloadConfigFile(config, configFormat);
-                setOperationError(null);
-              } catch {
-                setOperationError(t('app.exportFailed'));
-              }
-            }}
-            startIcon={<DownloadRoundedIcon />}
-          >
-            {t('app.downloadConfig')}
-          </Button>
-          <Button variant="contained" onClick={() => setIsFullJsonOpen(false)}>
-            关闭
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <Dialog
+          open={isFullJsonOpen}
+          onClose={() => setIsFullJsonOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>{t('app.fullJsonTitle')}</DialogTitle>
+          <DialogContent dividers>
+            <Box
+              component="pre"
+              sx={{
+                m: 0,
+                p: 2,
+                borderRadius: 3,
+                bgcolor: 'grey.100',
+                overflow: 'auto',
+                fontSize: 13,
+                lineHeight: 1.6,
+                maxHeight: '70vh',
+              }}
+            >
+              {fullJsonPreview}
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                try {
+                  downloadConfigFile(config, configFormat);
+                  setOperationError(null);
+                } catch {
+                  setOperationError(t('app.exportFailed'));
+                }
+              }}
+              startIcon={<DownloadRoundedIcon />}
+            >
+              {t('app.downloadConfig')}
+            </Button>
+            <Button variant="contained" onClick={() => setIsFullJsonOpen(false)}>
+              {t('app.close')}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
-      <Dialog open={isImportUrlOpen} onClose={handleImportUrlClose} maxWidth="sm" fullWidth>
-        <DialogTitle>{t('app.importUrlTitle')}</DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={2} sx={{ pt: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              {t('app.importUrlHint')}
-            </Typography>
-            <TextField
-              autoFocus
-              fullWidth
-              label={t('app.importUrlLabel')}
-              placeholder={t('app.importUrlPlaceholder')}
-              value={importUrl}
-              onChange={(event) => setImportUrl(event.target.value)}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleImportUrlClose} disabled={isImportingUrl}>
-            {t('app.cancel')}
-          </Button>
-          <Button variant="contained" onClick={handleImportUrlSubmit} disabled={isImportingUrl}>
-            {isImportingUrl ? t('app.importing') : t('app.importUrlSubmit')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <Dialog open={isImportUrlOpen} onClose={handleImportUrlClose} maxWidth="sm" fullWidth>
+          <DialogTitle>{t('app.importUrlTitle')}</DialogTitle>
+          <DialogContent dividers>
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                {t('app.importUrlHint')}
+              </Typography>
+              <TextField
+                autoFocus
+                fullWidth
+                label={t('app.importUrlLabel')}
+                placeholder={t('app.importUrlPlaceholder')}
+                value={importUrl}
+                onChange={(event) => setImportUrl(event.target.value)}
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleImportUrlClose} disabled={isImportingUrl}>
+              {t('app.cancel')}
+            </Button>
+            <Button variant="contained" onClick={handleImportUrlSubmit} disabled={isImportingUrl}>
+              {isImportingUrl ? t('app.importing') : t('app.importUrlSubmit')}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
-      <Suspense fallback={null}>
-        <PostConfigDialog
-          config={orderedConfig}
-          format={configFormat}
-          onClose={() => setIsPostUrlOpen(false)}
-          onError={setOperationError}
-          open={isPostUrlOpen}
+        <Suspense fallback={null}>
+          <PostConfigDialog
+            config={orderedConfig}
+            format={configFormat}
+            onClose={() => setIsPostUrlOpen(false)}
+            onError={setOperationError}
+            open={isPostUrlOpen}
+          />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <MultiImportDialog
+            open={multiImportOpen}
+            onClose={handleMultiImportClose}
+            config={orderedConfig}
+            onConfigUpdate={handleMultiImportConfirm}
+            onError={setOperationError}
+          />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <MultiBatchImportDialog
+            open={multiBatchImportOpen}
+            onClose={handleMultiBatchImportClose}
+            config={orderedConfig}
+            onConfigUpdate={handleMultiBatchConfigUpdate}
+            onError={setOperationError}
+          />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <MultiShareLinkPanel
+            open={multiPanelOpen}
+            onClose={handleMultiPanelClose}
+            config={orderedConfig}
+            onCopyLink={handleMultiPanelCopyLink}
+            onDeleteOutbound={handleMultiPanelDeleteOutbound}
+          />
+        </Suspense>
+
+        <Box
+          component="input"
+          ref={importInputRef}
+          type="file"
+          accept=".json,.json5,.yaml,.yml,.toml,application/json,application/yaml,application/toml,text/plain"
+          sx={{ display: 'none' }}
+          onChange={handleImportFileChange}
         />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <MultiImportDialog
-          open={multiImportOpen}
-          onClose={handleMultiImportClose}
-          config={orderedConfig}
-          onConfigUpdate={handleMultiImportConfirm}
-          onError={setOperationError}
-        />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <MultiBatchImportDialog
-          open={multiBatchImportOpen}
-          onClose={handleMultiBatchImportClose}
-          config={orderedConfig}
-          onConfigUpdate={handleMultiBatchConfigUpdate}
-          onError={setOperationError}
-        />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <MultiShareLinkPanel
-          open={multiPanelOpen}
-          onClose={handleMultiPanelClose}
-          config={orderedConfig}
-          onCopyLink={handleMultiPanelCopyLink}
-          onDeleteOutbound={handleMultiPanelDeleteOutbound}
-        />
-      </Suspense>
-
-      <Box
-        component="input"
-        ref={importInputRef}
-        type="file"
-        accept=".json,.json5,.yaml,.yml,.toml,application/json,application/yaml,application/toml,text/plain"
-        sx={{ display: 'none' }}
-        onChange={handleImportFileChange}
-      />
-    </Box>
+      </Box>
     </ErrorBoundary>
   );
 }

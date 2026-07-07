@@ -21,7 +21,10 @@ test.describe('Config Round-Trip', () => {
     // Select the "log" module in the top-level module selector
     // Label text: 第一级配置模块 (zh-CN) / Top-level Module (en-US)
     await page.getByLabel(/模块|Module|Top-level/i).click();
-    await page.getByRole('option', { name: /log|日志|Log/i }).first().click();
+    await page
+      .getByRole('option', { name: /log|日志|Log/i })
+      .first()
+      .click();
     await page.waitForTimeout(500);
 
     // The loglevel field was set to "warning" in our fixture
@@ -89,7 +92,7 @@ test.describe('Config Round-Trip', () => {
     const text = await jsonContent.textContent();
     expect(text).toContain('outbounds');
 
-    // Close dialog — the close button is hardcoded as "关闭" in App.tsx
+    // Close dialog in either supported locale.
     await page.getByRole('button', { name: /关闭|Close/i }).click();
     await expect(dialog).not.toBeVisible({ timeout: 3000 });
   });
