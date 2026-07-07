@@ -15,6 +15,9 @@ import {
   DialogTitle,
   Divider,
   FormControl,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
   InputLabel,
   MenuItem,
   Menu,
@@ -25,6 +28,7 @@ import {
   Typography,
 } from '@mui/material';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
+import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import UnfoldLessRoundedIcon from '@mui/icons-material/UnfoldLessRounded';
@@ -46,6 +50,7 @@ import {
   downloadConfigFile,
   isPlainObject,
   parseImportedConfig,
+  serializeConfigText,
   type ConfigFormat,
 } from './configFormat';
 import type { XrayConfig } from './schema';
@@ -59,10 +64,13 @@ import {
   topLevelFields,
 } from './schema';
 import { localeOptions, useI18n } from './i18n';
+import { createClientShareLinksFromInbounds } from './clientConfigExport';
+import { createTcpRealityInbound } from './tcpRealityInbound';
 const MultiImportDialog = lazy(() => import('./multi-protocol/ImportDialog'));
 const MultiBatchImportDialog = lazy(() => import('./multi-protocol/BatchImportDialog'));
 const MultiShareLinkPanel = lazy(() => import('./multi-protocol/ShareLinkPanel'));
 const ShareExportSection = lazy(() => import('./multi-protocol/ShareExportSection'));
+const QrCodeDialog = lazy(() => import('./multi-protocol/QrCodeDialog'));
 import ErrorBoundary from './ErrorBoundary';
 
 function CollapseToggleButton() {
@@ -166,6 +174,10 @@ export default function App() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isFullJsonOpen, setIsFullJsonOpen] = useState(false);
   const [importMenuAnchorEl, setImportMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [exportTarget, setExportTarget] = useState<'server' | 'client'>('server');
+  const [exportServerAddress, setExportServerAddress] = useState('');
+  const [exportCopiedMessage, setExportCopiedMessage] = useState<string | null>(null);
   const [isImportUrlOpen, setIsImportUrlOpen] = useState(false);
   const [importUrl, setImportUrl] = useState('');
   const [isImportingUrl, setIsImportingUrl] = useState(false);
@@ -177,6 +189,7 @@ export default function App() {
   const [multiImportOpen, setMultiImportOpen] = useState(false);
   const [multiBatchImportOpen, setMultiBatchImportOpen] = useState(false);
   const [multiPanelOpen, setMultiPanelOpen] = useState(false);
+  const [clientQrLink, setClientQrLink] = useState<string | null>(null);
 
   const orderedConfig = useMemo(() => orderXrayConfig(config), [config]);
   const fullJsonPreview = useMemo(() => JSON.stringify(orderedConfig, null, 2), [orderedConfig]);
@@ -302,6 +315,15 @@ export default function App() {
   const handleImportFileClick = () => {
     handleImportMenuClose();
     importInputRef.current?.click();
+  };
+
+  const handleExportDialogOpen = () => {
+    setExportCopiedMessage(null);
+    setIsExportDialogOpen(true);
+  };
+
+  const handleExportDialogClose = () => {
+    setIsExportDialogOpen(false);
   };
 
   const handleImportFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -442,6 +464,74 @@ export default function App() {
     setIsSubmitted(false);
   };
 
+  const handleAddTcpRealityInbound = () => {
+    setConfig((currentConfig) => {
+      const currentInbounds = Array.isArray(currentConfig.inbounds) ? currentConfig.inbounds : [];
+      const nextInbound = createTcpRealityInbound(currentInbounds);
+
+      return orderXrayConfig({
+        ...currentConfig,
+        inbounds: [...currentInbounds, nextInbound],
+      });
+    });
+    setSelectedField('inbounds');
+    setOperationError(null);
+    setIsSubmitted(false);
+  };
+
+  const createClientShareLinks = () => {
+    const serverAddress = exportServerAddress.trim();
+
+    if (!serverAddress) {
+      setOperationError(t('app.clientExportAddressRequired'));
+      return null;
+    }
+
+    return createClientShareLinksFromInbounds(config, serverAddress);
+  };
+
+  const handleCopyServerConfig = async () => {
+    try {
+      await navigator.clipboard.writeText(serializeConfigText(config, configFormat));
+      setExportCopiedMessage(t('app.exportCopied'));
+      setOperationError(null);
+    } catch (error) {
+      setOperationError(error instanceof Error ? error.message : t('app.exportFailed'));
+    }
+  };
+
+  const handleDownloadServerConfig = () => {
+    try {
+      downloadConfigFile(config, configFormat, 'xray-server-config');
+      setOperationError(null);
+    } catch {
+      setOperationError(t('app.exportFailed'));
+    }
+  };
+
+  const handleCopyClientShareLink = async () => {
+    try {
+      const links = createClientShareLinks();
+      if (!links) return;
+      await navigator.clipboard.writeText(links.join('\n'));
+      setExportCopiedMessage(t('app.exportCopied'));
+      setOperationError(null);
+    } catch (error) {
+      setOperationError(error instanceof Error ? error.message : t('app.exportFailed'));
+    }
+  };
+
+  const handleShowClientQrCode = () => {
+    try {
+      const links = createClientShareLinks();
+      if (!links) return;
+      setClientQrLink(links.join('\n'));
+      setOperationError(null);
+    } catch (error) {
+      setOperationError(error instanceof Error ? error.message : t('app.exportFailed'));
+    }
+  };
+
   return (
     <ErrorBoundary>
       <Box
@@ -489,24 +579,37 @@ export default function App() {
                   </Box>
 
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                    <FormControl fullWidth>
-                      <InputLabel id="top-level-field-label">{t('app.moduleSelect')}</InputLabel>
-                      <Select
-                        labelId="top-level-field-label"
-                        label={t('app.moduleSelect')}
-                        value={selectedField}
-                        onChange={(event) => {
-                          setSelectedField(String(event.target.value));
-                          setIsSubmitted(false);
-                        }}
-                      >
-                        {selectedFieldOptions.map((option) => (
-                          <MenuItem key={option.value} value={option.value}>
-                            {option.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} sx={{ flex: 1 }}>
+                      <FormControl fullWidth>
+                        <InputLabel id="top-level-field-label">{t('app.moduleSelect')}</InputLabel>
+                        <Select
+                          labelId="top-level-field-label"
+                          label={t('app.moduleSelect')}
+                          value={selectedField}
+                          onChange={(event) => {
+                            setSelectedField(String(event.target.value));
+                            setIsSubmitted(false);
+                          }}
+                        >
+                          {selectedFieldOptions.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+
+                      {selectedField === 'inbounds' ? (
+                        <Button
+                          variant="outlined"
+                          onClick={handleAddTcpRealityInbound}
+                          startIcon={<AddCircleOutlineRoundedIcon />}
+                          sx={{ minWidth: { xs: '100%', sm: 180 } }}
+                        >
+                          {t('app.addTcpRealityInbound')}
+                        </Button>
+                      ) : null}
+                    </Stack>
 
                     <FormControl sx={{ minWidth: 160 }}>
                       <InputLabel id="config-format-label">{t('app.configFormat')}</InputLabel>
@@ -582,17 +685,10 @@ export default function App() {
                           </Button>
                           <Button
                             variant="text"
-                            onClick={() => {
-                              try {
-                                downloadConfigFile(config, configFormat);
-                                setOperationError(null);
-                              } catch {
-                                setOperationError(t('app.exportFailed'));
-                              }
-                            }}
+                            onClick={handleExportDialogOpen}
                             startIcon={<DownloadRoundedIcon />}
                           >
-                            {t('app.downloadConfig')}
+                            {t('app.exportConfig')}
                           </Button>
                           <CollapseToggleButton />
                         </Stack>
@@ -692,22 +788,86 @@ export default function App() {
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={() => {
-                try {
-                  downloadConfigFile(config, configFormat);
-                  setOperationError(null);
-                } catch {
-                  setOperationError(t('app.exportFailed'));
-                }
-              }}
-              startIcon={<DownloadRoundedIcon />}
-            >
-              {t('app.downloadConfig')}
+            <Button onClick={handleExportDialogOpen} startIcon={<DownloadRoundedIcon />}>
+              {t('app.exportConfig')}
             </Button>
             <Button variant="contained" onClick={() => setIsFullJsonOpen(false)}>
               {t('app.close')}
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={isExportDialogOpen} onClose={handleExportDialogClose} maxWidth="sm" fullWidth>
+          <DialogTitle>{t('app.exportDialogTitle')}</DialogTitle>
+          <DialogContent dividers>
+            <Stack spacing={2.5} sx={{ pt: 1 }}>
+              <FormControl>
+                <RadioGroup
+                  row
+                  value={exportTarget}
+                  onChange={(event) => {
+                    setExportTarget(event.target.value as 'server' | 'client');
+                    setExportCopiedMessage(null);
+                  }}
+                >
+                  <FormControlLabel
+                    value="server"
+                    control={<Radio />}
+                    label={t('app.exportServerConfig')}
+                  />
+                  <FormControlLabel
+                    value="client"
+                    control={<Radio />}
+                    label={t('app.exportClientConfig')}
+                  />
+                </RadioGroup>
+              </FormControl>
+
+              {exportTarget === 'server' ? (
+                <Stack spacing={1.5}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('app.exportServerHint')}
+                  </Typography>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                    <Button variant="contained" onClick={() => void handleCopyServerConfig()}>
+                      {t('app.exportCopyToClipboard')}
+                    </Button>
+                    <Button variant="outlined" onClick={handleDownloadServerConfig}>
+                      {t('app.exportDownloadFile')}
+                    </Button>
+                  </Stack>
+                </Stack>
+              ) : (
+                <Stack spacing={1.5}>
+                  <TextField
+                    fullWidth
+                    label={t('app.clientExportAddressLabel')}
+                    placeholder={t('app.clientExportAddressPlaceholder')}
+                    value={exportServerAddress}
+                    onChange={(event) => {
+                      setExportServerAddress(event.target.value);
+                      setExportCopiedMessage(null);
+                    }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    {t('app.exportClientHint')}
+                  </Typography>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                    <Button variant="contained" onClick={() => void handleCopyClientShareLink()}>
+                      {t('app.exportShareLink')}
+                    </Button>
+                    <Button variant="outlined" onClick={handleShowClientQrCode}>
+                      {t('app.exportShareQrCode')}
+                    </Button>
+                  </Stack>
+                </Stack>
+              )}
+
+              {exportCopiedMessage ? <Alert severity="success">{exportCopiedMessage}</Alert> : null}
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleExportDialogClose}>{t('app.close')}</Button>
           </DialogActions>
         </Dialog>
 
@@ -775,6 +935,15 @@ export default function App() {
             config={orderedConfig}
             onCopyLink={handleMultiPanelCopyLink}
             onDeleteOutbound={handleMultiPanelDeleteOutbound}
+          />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <QrCodeDialog
+            open={Boolean(clientQrLink)}
+            onClose={() => setClientQrLink(null)}
+            link={clientQrLink ?? ''}
+            tag={t('app.exportShareQrCode')}
           />
         </Suspense>
 

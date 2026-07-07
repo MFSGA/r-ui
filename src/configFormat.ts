@@ -84,7 +84,11 @@ export function getConfigMimeType(format: ConfigFormat) {
   }
 }
 
-export function downloadConfigFile(config: XrayConfig, format: ConfigFormat) {
+export function downloadConfigFile(
+  config: XrayConfig,
+  format: ConfigFormat,
+  fileBaseName = 'xray-config',
+) {
   const content = serializeConfigText(config, format);
   const mimeType = getConfigMimeType(format);
   const extension = format === 'json' ? 'json' : format;
@@ -92,7 +96,7 @@ export function downloadConfigFile(config: XrayConfig, format: ConfigFormat) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `xray-config.${extension}`;
+  anchor.download = `${fileBaseName}.${extension}`;
   anchor.click();
   URL.revokeObjectURL(url);
 }

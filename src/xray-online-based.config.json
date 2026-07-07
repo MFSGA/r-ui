@@ -4,10 +4,7 @@
     "dnsLog": false
   },
   "dns": {
-    "servers": [
-      "1.1.1.1",
-      "8.8.8.8"
-    ],
+    "servers": ["1.1.1.1", "8.8.8.8"],
     "queryStrategy": "UseIP"
   },
   "routing": {
@@ -15,21 +12,115 @@
     "rules": [
       {
         "type": "field",
-        "ip": [
-          "geoip:private"
-        ],
+        "ip": ["geoip:private"],
         "outboundTag": "direct"
       },
       {
         "type": "field",
-        "protocol": [
-          "bittorrent"
-        ],
+        "protocol": ["bittorrent"],
         "outboundTag": "blocked"
       }
     ]
   },
   "inbounds": [
+    {
+      "listen": "0.0.0.0",
+      "port": 39443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "email": "b6056b7e",
+            "flow": "xtls-rprx-vision",
+            "id": "50d27732-e3ee-4b64-864c-7432cb4fe8be"
+          }
+        ],
+        "decryption": "none"
+      },
+      "sniffing": {
+        "destOverride": ["http", "tls", "quic", "fakedns"],
+        "enabled": false,
+        "metadataOnly": false,
+        "routeOnly": false
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "realitySettings": {
+          "maxClientVer": "",
+          "maxTimeDiff": 0,
+          "minClientVer": "",
+          "mldsa65Seed": "",
+          "privateKey": "6Rgqn64QOk4a0Shj3sSczsXuFPMJrXOkXGxE-aQkz6s",
+          "serverNames": ["www.microsoft.com"],
+          "shortIds": ["40db8ee839c27de4"],
+          "show": false,
+          "target": "www.microsoft.com:443",
+          "xver": 0
+        },
+        "security": "reality",
+        "rawSettings": {
+          "acceptProxyProtocol": false,
+          "header": {
+            "type": "none"
+          }
+        }
+      },
+      "tag": "inbound-39443"
+    },
+    {
+      "listen": "0.0.0.0",
+      "port": 39444,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "email": "fh5d21he",
+            "flow": "",
+            "id": "114cb5a6-3787-4357-a5da-69b5782cb74f"
+          },
+          {
+            "email": "bnbfeqqi",
+            "flow": "",
+            "id": "9d3f2505-9640-4fd2-8b75-51b130040ba3"
+          },
+          {
+            "email": "q236znu1",
+            "flow": "",
+            "id": "81780b78-c95c-4522-85b7-6dcbaefe8684"
+          }
+        ],
+        "decryption": "none"
+      },
+      "sniffing": {
+        "destOverride": ["http", "tls", "quic", "fakedns"],
+        "enabled": false,
+        "metadataOnly": false,
+        "routeOnly": false
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "realitySettings": {
+          "maxClientVer": "",
+          "maxTimeDiff": 0,
+          "minClientVer": "",
+          "mldsa65Seed": "",
+          "privateKey": "CAe1AlfoOhzR5zwWRYxUSUm2qdzWXM0qDJzbOWUvTno",
+          "serverNames": ["www.apple.com"],
+          "shortIds": ["6ba85179e30d4fc2"],
+          "show": false,
+          "target": "www.apple.com:443",
+          "xver": 0
+        },
+        "security": "reality",
+        "rawSettings": {
+          "acceptProxyProtocol": false,
+          "header": {
+            "type": "none"
+          }
+        }
+      },
+      "tag": "inbound-39444"
+    },
     {
       "listen": "127.0.0.1",
       "port": 10808,
@@ -41,10 +132,7 @@
       },
       "sniffing": {
         "enabled": true,
-        "destOverride": [
-          "http",
-          "tls"
-        ]
+        "destOverride": ["http", "tls"]
       }
     },
     {
