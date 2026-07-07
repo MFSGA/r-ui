@@ -36,7 +36,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ConfigPath,
 
-    [string]$XrayPath = "$env:XRAY_PATH",
+    [string]$XrayPath = $env:XRAY_PATH,
 
     [string]$ProjectRoot = "",
 
