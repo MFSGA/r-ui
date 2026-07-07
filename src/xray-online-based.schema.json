@@ -98,13 +98,7 @@
         },
         "loglevel": {
           "type": "string",
-          "enum": [
-            "debug",
-            "info",
-            "warning",
-            "error",
-            "none"
-          ]
+          "enum": ["debug", "info", "warning", "error", "none"]
         }
       }
     },
@@ -146,12 +140,7 @@
         },
         "queryStrategy": {
           "type": "string",
-          "enum": [
-            "UseIP",
-            "UseIPv4",
-            "UseIPv6",
-            "UseSystem"
-          ]
+          "enum": ["UseIP", "UseIPv4", "UseIPv6", "UseSystem"]
         },
         "disableCache": {
           "type": "boolean"
@@ -199,17 +188,10 @@
         },
         "queryStrategy": {
           "type": "string",
-          "enum": [
-            "UseIP",
-            "UseIPv4",
-            "UseIPv6",
-            "UseSystem"
-          ]
+          "enum": ["UseIP", "UseIPv4", "UseIPv6", "UseSystem"]
         }
       },
-      "required": [
-        "address"
-      ]
+      "required": ["address"]
     },
     "RoutingObject": {
       "type": "object",
@@ -217,18 +199,11 @@
       "properties": {
         "domainStrategy": {
           "type": "string",
-          "enum": [
-            "AsIs",
-            "IPIfNonMatch",
-            "IPOnDemand"
-          ]
+          "enum": ["AsIs", "IPIfNonMatch", "IPOnDemand"]
         },
         "domainMatcher": {
           "type": "string",
-          "enum": [
-            "hybrid",
-            "linear"
-          ]
+          "enum": ["hybrid", "linear"]
         },
         "rules": {
           "type": "array",
@@ -253,10 +228,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": [
-            "field",
-            "chinaip"
-          ]
+          "enum": ["field", "chinaip"]
         },
         "domain": {
           "type": "array",
@@ -292,11 +264,7 @@
         },
         "network": {
           "type": "string",
-          "enum": [
-            "tcp",
-            "udp",
-            "tcp,udp"
-          ]
+          "enum": ["tcp", "udp", "tcp,udp"]
         },
         "source": {
           "type": "array",
@@ -333,15 +301,10 @@
         },
         "domainMatcher": {
           "type": "string",
-          "enum": [
-            "hybrid",
-            "linear"
-          ]
+          "enum": ["hybrid", "linear"]
         }
       },
-      "required": [
-        "type"
-      ]
+      "required": ["type"]
     },
     "InboundObject": {
       "type": "object",
@@ -387,10 +350,7 @@
           "type": "object"
         }
       },
-      "required": [
-        "port",
-        "protocol"
-      ],
+      "required": ["port", "protocol"],
       "allOf": [
         {
           "if": {
@@ -556,14 +516,10 @@
                     "const": "hysteria"
                   }
                 },
-                "required": [
-                  "network"
-                ]
+                "required": ["network"]
               }
             },
-            "required": [
-              "streamSettings"
-            ]
+            "required": ["streamSettings"]
           }
         },
         {
@@ -625,20 +581,10 @@
         },
         "targetStrategy": {
           "type": "string",
-          "enum": [
-            "AsIs",
-            "UseIP",
-            "UseIPv4",
-            "UseIPv6",
-            "ForceIP",
-            "ForceIPv4",
-            "ForceIPv6"
-          ]
+          "enum": ["AsIs", "UseIP", "UseIPv4", "UseIPv6", "ForceIP", "ForceIPv4", "ForceIPv6"]
         }
       },
-      "required": [
-        "protocol"
-      ],
+      "required": ["protocol"],
       "allOf": [
         {
           "if": {
@@ -820,14 +766,10 @@
                     "const": "hysteria"
                   }
                 },
-                "required": [
-                  "network"
-                ]
+                "required": ["network"]
               }
             },
-            "required": [
-              "streamSettings"
-            ]
+            "required": ["streamSettings"]
           }
         }
       ]
@@ -843,9 +785,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "tag"
-      ]
+      "required": ["tag"]
     },
     "MuxObject": {
       "type": "object",
@@ -864,11 +804,7 @@
         },
         "xudpProxyUDP443": {
           "type": "string",
-          "enum": [
-            "reject",
-            "allow",
-            "skip"
-          ]
+          "enum": ["reject", "allow", "skip"]
         },
         "padding": {
           "type": "boolean"
@@ -886,12 +822,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": [
-              "http",
-              "tls",
-              "quic",
-              "fakedns"
-            ]
+            "enum": ["http", "tls", "quic", "fakedns"]
           }
         },
         "metadataOnly": {
@@ -928,11 +859,7 @@
         },
         "security": {
           "type": "string",
-          "enum": [
-            "none",
-            "tls",
-            "reality"
-          ]
+          "enum": ["none", "tls", "reality"]
         },
         "tlsSettings": {
           "$ref": "#/definitions/TLSObject"
@@ -979,19 +906,12 @@
                 "const": "tls"
               }
             },
-            "required": [
-              "security"
-            ]
+            "required": ["security"]
           },
           "then": {
-            "required": [
-              "security",
-              "tlsSettings"
-            ],
+            "required": ["security", "tlsSettings"],
             "not": {
-              "required": [
-                "realitySettings"
-              ]
+              "required": ["realitySettings"]
             }
           }
         },
@@ -1002,19 +922,12 @@
                 "const": "reality"
               }
             },
-            "required": [
-              "security"
-            ]
+            "required": ["security"]
           },
           "then": {
-            "required": [
-              "security",
-              "realitySettings"
-            ],
+            "required": ["security", "realitySettings"],
             "not": {
-              "required": [
-                "tlsSettings"
-              ]
+              "required": ["tlsSettings"]
             }
           }
         },
@@ -1025,70 +938,43 @@
                 "const": "hysteria"
               }
             },
-            "required": [
-              "network"
-            ]
+            "required": ["network"]
           },
           "then": {
             "properties": {
               "security": {
-                "enum": [
-                  "tls"
-                ]
+                "enum": ["tls"]
               }
             },
-            "required": [
-              "network",
-              "security",
-              "tlsSettings",
-              "hysteriaSettings"
-            ],
+            "required": ["network", "security", "tlsSettings", "hysteriaSettings"],
             "not": {
               "anyOf": [
                 {
-                  "required": [
-                    "realitySettings"
-                  ]
+                  "required": ["realitySettings"]
                 },
                 {
-                  "required": [
-                    "rawSettings"
-                  ]
+                  "required": ["rawSettings"]
                 },
                 {
-                  "required": [
-                    "xhttpSettings"
-                  ]
+                  "required": ["xhttpSettings"]
                 },
                 {
-                  "required": [
-                    "kcpSettings"
-                  ]
+                  "required": ["kcpSettings"]
                 },
                 {
-                  "required": [
-                    "grpcSettings"
-                  ]
+                  "required": ["grpcSettings"]
                 },
                 {
-                  "required": [
-                    "wsSettings"
-                  ]
+                  "required": ["wsSettings"]
                 },
                 {
-                  "required": [
-                    "httpupgradeSettings"
-                  ]
+                  "required": ["httpupgradeSettings"]
                 },
                 {
-                  "required": [
-                    "udpmasks"
-                  ]
+                  "required": ["udpmasks"]
                 },
                 {
-                  "required": [
-                    "sockopt"
-                  ]
+                  "required": ["sockopt"]
                 }
               ]
             }
@@ -1116,11 +1002,7 @@
         },
         "security": {
           "type": "string",
-          "enum": [
-            "none",
-            "tls",
-            "reality"
-          ]
+          "enum": ["none", "tls", "reality"]
         },
         "tlsSettings": {
           "$ref": "#/definitions/TLSObject"
@@ -1167,19 +1049,12 @@
                 "const": "tls"
               }
             },
-            "required": [
-              "security"
-            ]
+            "required": ["security"]
           },
           "then": {
-            "required": [
-              "security",
-              "tlsSettings"
-            ],
+            "required": ["security", "tlsSettings"],
             "not": {
-              "required": [
-                "realitySettings"
-              ]
+              "required": ["realitySettings"]
             }
           }
         },
@@ -1190,19 +1065,12 @@
                 "const": "reality"
               }
             },
-            "required": [
-              "security"
-            ]
+            "required": ["security"]
           },
           "then": {
-            "required": [
-              "security",
-              "realitySettings"
-            ],
+            "required": ["security", "realitySettings"],
             "not": {
-              "required": [
-                "tlsSettings"
-              ]
+              "required": ["tlsSettings"]
             }
           }
         }
@@ -1325,18 +1193,11 @@
       "properties": {
         "version": {
           "type": "integer",
-          "enum": [
-            1,
-            2
-          ]
+          "enum": [1, 2]
         },
         "congestion": {
           "type": "string",
-          "enum": [
-            "brutal",
-            "bbr",
-            "cubic"
-          ]
+          "enum": ["brutal", "bbr", "cubic"]
         },
         "up": {
           "type": "string"
@@ -1378,17 +1239,13 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": [
-            "salamander"
-          ]
+          "enum": ["salamander"]
         },
         "settings": {
           "$ref": "#/definitions/UdpMaskSettingsObject"
         }
       },
-      "required": [
-        "type"
-      ]
+      "required": ["type"]
     },
     "UdpMaskSettingsObject": {
       "type": "object",
@@ -1450,6 +1307,9 @@
         },
         "mldsa65Seed": {
           "type": "string"
+        },
+        "xver": {
+          "type": "integer"
         }
       }
     },
@@ -1552,12 +1412,7 @@
         },
         "mode": {
           "type": "string",
-          "enum": [
-            "auto",
-            "packet-up",
-            "stream-up",
-            "stream-one"
-          ]
+          "enum": ["auto", "packet-up", "stream-up", "stream-one"]
         },
         "extra": {
           "type": "object"
@@ -1600,11 +1455,7 @@
         },
         "tproxy": {
           "type": "string",
-          "enum": [
-            "off",
-            "redirect",
-            "tproxy"
-          ]
+          "enum": ["off", "redirect", "tproxy"]
         },
         "tcpKeepAliveInterval": {
           "type": "integer"
@@ -1626,12 +1477,7 @@
         },
         "domainStrategy": {
           "type": "string",
-          "enum": [
-            "AsIs",
-            "UseIP",
-            "UseIPv4",
-            "UseIPv6"
-          ]
+          "enum": ["AsIs", "UseIP", "UseIPv4", "UseIPv6"]
         },
         "dialerProxy": {
           "type": "string"
@@ -1692,21 +1538,12 @@
     "SocksInboundConfigurationObject": {
       "type": "object",
       "propertyNames": {
-        "enum": [
-          "auth",
-          "accounts",
-          "udp",
-          "ip",
-          "userLevel"
-        ]
+        "enum": ["auth", "accounts", "udp", "ip", "userLevel"]
       },
       "properties": {
         "auth": {
           "type": "string",
-          "enum": [
-            "noauth",
-            "password"
-          ]
+          "enum": ["noauth", "password"]
         },
         "udp": {
           "type": "boolean"
@@ -1725,24 +1562,18 @@
               "title": "noauth",
               "properties": {
                 "auth": {
-                  "enum": [
-                    "noauth"
-                  ]
+                  "enum": ["noauth"]
                 }
               },
               "not": {
-                "required": [
-                  "accounts"
-                ]
+                "required": ["accounts"]
               }
             },
             {
               "title": "password",
               "properties": {
                 "auth": {
-                  "enum": [
-                    "password"
-                  ]
+                  "enum": ["password"]
                 },
                 "accounts": {
                   "type": "array",
@@ -1791,11 +1622,7 @@
         },
         "network": {
           "type": "string",
-          "enum": [
-            "tcp",
-            "udp",
-            "tcp,udp"
-          ]
+          "enum": ["tcp", "udp", "tcp,udp"]
         },
         "followRedirect": {
           "type": "boolean"
@@ -1945,9 +1772,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id"]
     },
     "TunInboundConfigurationObject": {
       "type": "object",
@@ -2022,15 +1847,7 @@
       "properties": {
         "domainStrategy": {
           "type": "string",
-          "enum": [
-            "AsIs",
-            "UseIP",
-            "UseIPv4",
-            "UseIPv6",
-            "ForceIP",
-            "ForceIPv4",
-            "ForceIPv6"
-          ]
+          "enum": ["AsIs", "UseIP", "UseIPv4", "UseIPv6", "ForceIP", "ForceIPv4", "ForceIPv6"]
         },
         "redirect": {
           "type": "string"
@@ -2064,10 +1881,7 @@
       "properties": {
         "network": {
           "type": "string",
-          "enum": [
-            "tcp",
-            "udp"
-          ]
+          "enum": ["tcp", "udp"]
         },
         "address": {
           "type": "string"
@@ -2085,9 +1899,7 @@
           }
         }
       },
-      "required": [
-        "servers"
-      ]
+      "required": ["servers"]
     },
     "HttpOutboundConfigurationObject": {
       "type": "object",
@@ -2100,9 +1912,7 @@
           }
         }
       },
-      "required": [
-        "servers"
-      ]
+      "required": ["servers"]
     },
     "VLESSOutboundConfigurationObject": {
       "type": "object",
@@ -2115,9 +1925,7 @@
           }
         }
       },
-      "required": [
-        "vnext"
-      ]
+      "required": ["vnext"]
     },
     "VMessOutboundConfigurationObject": {
       "type": "object",
@@ -2130,9 +1938,7 @@
           }
         }
       },
-      "required": [
-        "vnext"
-      ]
+      "required": ["vnext"]
     },
     "TrojanOutboundConfigurationObject": {
       "type": "object",
@@ -2145,9 +1951,7 @@
           }
         }
       },
-      "required": [
-        "servers"
-      ]
+      "required": ["servers"]
     },
     "ShadowsocksOutboundConfigurationObject": {
       "type": "object",
@@ -2160,9 +1964,7 @@
           }
         }
       },
-      "required": [
-        "servers"
-      ]
+      "required": ["servers"]
     },
     "WireGuardOutboundConfigurationObject": {
       "type": "object",
@@ -2197,12 +1999,7 @@
         },
         "domainStrategy": {
           "type": "string",
-          "enum": [
-            "ForceIP",
-            "ForceIPv4",
-            "ForceIPv6",
-            "UseIP"
-          ]
+          "enum": ["ForceIP", "ForceIPv4", "ForceIPv6", "UseIP"]
         },
         "noKernelTun": {
           "type": "boolean"
@@ -2223,10 +2020,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "user",
-        "pass"
-      ]
+      "required": ["user", "pass"]
     },
     "VLESSUserObject": {
       "type": "object",
@@ -2248,9 +2042,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id"]
     },
     "VMessUserObject": {
       "type": "object",
@@ -2272,9 +2064,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "id"
-      ]
+      "required": ["id"]
     },
     "TrojanUserObject": {
       "type": "object",
@@ -2290,9 +2080,7 @@
           "type": "integer"
         }
       },
-      "required": [
-        "password"
-      ]
+      "required": ["password"]
     },
     "VNextObject": {
       "type": "object",
@@ -2320,11 +2108,7 @@
           }
         }
       },
-      "required": [
-        "address",
-        "port",
-        "users"
-      ]
+      "required": ["address", "port", "users"]
     },
     "SocksServerObject": {
       "type": "object",
@@ -2345,10 +2129,7 @@
           }
         }
       },
-      "required": [
-        "address",
-        "port"
-      ]
+      "required": ["address", "port"]
     },
     "HttpServerObject": {
       "type": "object",
@@ -2369,10 +2150,7 @@
           }
         }
       },
-      "required": [
-        "address",
-        "port"
-      ]
+      "required": ["address", "port"]
     },
     "TrojanServerObject": {
       "type": "object",
@@ -2399,11 +2177,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "address",
-        "port",
-        "password"
-      ]
+      "required": ["address", "port", "password"]
     },
     "ShadowsocksServerObject": {
       "type": "object",
@@ -2433,12 +2207,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "address",
-        "port",
-        "method",
-        "password"
-      ]
+      "required": ["address", "port", "method", "password"]
     }
   }
 }

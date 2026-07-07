@@ -25,12 +25,15 @@ import {
   Typography,
 } from '@mui/material';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
-import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import UnfoldLessRoundedIcon from '@mui/icons-material/UnfoldLessRounded';
 import UnfoldMoreRoundedIcon from '@mui/icons-material/UnfoldMoreRounded';
 import CollapsibleObjectFieldTemplate from './CollapsibleObjectFieldTemplate';
+import {
+  CompactArrayFieldItemTemplate,
+  CompactArrayFieldTemplate,
+} from './CompactArrayFieldTemplate';
 import HysteriaAwareSecurityWidget from './HysteriaAwareSecurityWidget';
 import PlaceholderBaseInputTemplate from './PlaceholderBaseInputTemplate';
 const PostConfigDialog = lazy(() => import('./PostConfigDialog'));
@@ -226,6 +229,8 @@ export default function App() {
   );
   const templates = useMemo(
     () => ({
+      ArrayFieldTemplate: CompactArrayFieldTemplate,
+      ArrayFieldItemTemplate: CompactArrayFieldItemTemplate,
       BaseInputTemplate: PlaceholderBaseInputTemplate,
       ObjectFieldTemplate: (props: Parameters<typeof CollapsibleObjectFieldTemplate>[0]) => (
         <CollapsibleObjectFieldTemplate
@@ -316,8 +321,8 @@ export default function App() {
       setSelectedField(findInitialSelectedField(importedConfig));
       setOperationError(null);
       setIsSubmitted(false);
-    } catch {
-      setOperationError(t('app.importParseFailed'));
+    } catch (error) {
+      setOperationError(error instanceof Error ? error.message : t('app.importParseFailed'));
     }
   };
 
@@ -370,17 +375,18 @@ export default function App() {
       setOperationError(null);
       setIsSubmitted(false);
       setIsImportUrlOpen(false);
-    } catch {
-      setOperationError(t('app.importUrlParseFailed'));
+    } catch (error) {
+      setOperationError(error instanceof Error ? error.message : t('app.importUrlParseFailed'));
     } finally {
       setIsImportingUrl(false);
     }
   };
 
-  const handlePostUrlOpen = () => {
-    setOperationError(null);
-    setIsPostUrlOpen(true);
-  };
+  // Keep the POST dialog wired below; restore this handler with the toolbar button when POST is exposed again.
+  // const handlePostUrlOpen = () => {
+  //   setOperationError(null);
+  //   setIsPostUrlOpen(true);
+  // };
 
   // Multi-protocol handlers
   const handleMultiImportOpen = () => {
@@ -573,13 +579,6 @@ export default function App() {
                             startIcon={<ReplayRoundedIcon />}
                           >
                             {t('app.resetModule')}
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            onClick={handlePostUrlOpen}
-                            startIcon={<SendRoundedIcon />}
-                          >
-                            {t('app.postConfig')}
                           </Button>
                           <Button
                             variant="text"

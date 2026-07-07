@@ -47,7 +47,7 @@ const REALITY_STEPS: RealityStep[] = [
   },
   {
     labelKey: 'template.realityWizard.step.advanced',
-    fields: ['show', 'mldsa65Seed', 'limitFallbackUpload', 'limitFallbackDownload'],
+    fields: ['show', 'xver', 'mldsa65Seed', 'limitFallbackUpload', 'limitFallbackDownload'],
   },
 ];
 
@@ -86,7 +86,10 @@ export default function RealitySettingsWizardDialog({
     }
   }, [open]);
 
-  const visibleProperties = useMemo(() => properties.filter((property) => !property.hidden), [properties]);
+  const visibleProperties = useMemo(
+    () => properties.filter((property) => !property.hidden),
+    [properties],
+  );
   const currentStep = REALITY_STEPS[activeStep] ?? REALITY_STEPS[0];
   const currentStepProperties = useMemo(
     () =>
@@ -115,7 +118,20 @@ export default function RealitySettingsWizardDialog({
 
   return (
     <>
-      <Button variant="outlined" startIcon={<EditRoundedIcon />} onClick={() => setOpen(true)}>
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={<EditRoundedIcon />}
+        onClick={() => setOpen(true)}
+        sx={{
+          alignSelf: 'flex-start',
+          borderRadius: 1.5,
+          px: 1.5,
+          minHeight: 36,
+          fontWeight: 700,
+          textTransform: 'none',
+        }}
+      >
         {t('template.realityWizard.configure')}
       </Button>
 
@@ -133,9 +149,21 @@ export default function RealitySettingsWizardDialog({
               </Typography>
             ) : null}
 
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }} flexWrap="wrap">
-              <Chip label={`${visibleProperties.length} ${t('template.realityWizard.fields')}`} size="small" />
-              <Chip label={`${activeStep + 1} / ${REALITY_STEPS.length} ${t('template.realityWizard.steps')}`} size="small" variant="outlined" />
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={1}
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+              flexWrap="wrap"
+            >
+              <Chip
+                label={`${visibleProperties.length} ${t('template.realityWizard.fields')}`}
+                size="small"
+              />
+              <Chip
+                label={`${activeStep + 1} / ${REALITY_STEPS.length} ${t('template.realityWizard.steps')}`}
+                size="small"
+                variant="outlined"
+              />
               <Box sx={{ flex: 1 }} />
               <Button
                 size="small"
@@ -178,11 +206,17 @@ export default function RealitySettingsWizardDialog({
 
         <DialogActions>
           <Button onClick={() => setOpen(false)}>{t('template.realityWizard.close')}</Button>
-          <Button onClick={() => setActiveStep((step) => Math.max(0, step - 1))} disabled={activeStep === 0}>
+          <Button
+            onClick={() => setActiveStep((step) => Math.max(0, step - 1))}
+            disabled={activeStep === 0}
+          >
             {t('template.realityWizard.previous')}
           </Button>
           {activeStep < REALITY_STEPS.length - 1 ? (
-            <Button variant="contained" onClick={() => setActiveStep((step) => Math.min(REALITY_STEPS.length - 1, step + 1))}>
+            <Button
+              variant="contained"
+              onClick={() => setActiveStep((step) => Math.min(REALITY_STEPS.length - 1, step + 1))}
+            >
               {t('template.realityWizard.next')}
             </Button>
           ) : (

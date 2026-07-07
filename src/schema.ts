@@ -50,7 +50,9 @@ export function getTopLevelFieldOptions(locale: Locale) {
 export function getTopLevelFieldSchema(field: XrayConfigKey, locale: Locale): RJSFSchema {
   const fieldSchema = rootProperties[field];
   const localizedFieldSchema =
-    typeof fieldSchema === 'object' && fieldSchema !== null ? (localizeSchemaNode(fieldSchema, locale, [field]) as Record<string, unknown>) : {};
+    typeof fieldSchema === 'object' && fieldSchema !== null
+      ? (localizeSchemaNode(fieldSchema, locale, [field]) as Record<string, unknown>)
+      : {};
 
   return {
     ...localizedFieldSchema,
@@ -62,7 +64,9 @@ export function getTopLevelFieldSchema(field: XrayConfigKey, locale: Locale): RJ
 export function getTopLevelFieldUiSchema(field: XrayConfigKey, locale: Locale): UiSchema {
   const fieldUiSchema = uiSchema[field];
   const localizedFieldUiSchema =
-    typeof fieldUiSchema === 'object' && fieldUiSchema !== null ? (localizeUiSchemaNode(fieldUiSchema, locale, [field]) as UiSchema) : {};
+    typeof fieldUiSchema === 'object' && fieldUiSchema !== null
+      ? (localizeUiSchemaNode(fieldUiSchema, locale, [field]) as UiSchema)
+      : {};
 
   return {
     'ui:submitButtonOptions': {
@@ -90,7 +94,11 @@ export function orderXrayConfig(config: XrayConfig): XrayConfig {
   return orderedConfig;
 }
 
-export function normalizeProtocolSwitches(field: XrayConfigKey, nextFormData: unknown, previousFormData: unknown) {
+export function normalizeProtocolSwitches(
+  field: XrayConfigKey,
+  nextFormData: unknown,
+  previousFormData: unknown,
+) {
   if (field !== 'inbounds' && field !== 'outbounds') {
     return nextFormData;
   }
@@ -109,7 +117,10 @@ export function normalizeProtocolSwitches(field: XrayConfigKey, nextFormData: un
     }
 
     const nextProtocol = typeof nextItem.protocol === 'string' ? nextItem.protocol : undefined;
-    const previousProtocol = isRecord(previousItem) && typeof previousItem.protocol === 'string' ? previousItem.protocol : undefined;
+    const previousProtocol =
+      isRecord(previousItem) && typeof previousItem.protocol === 'string'
+        ? previousItem.protocol
+        : undefined;
     const protocolChanged = nextProtocol !== undefined && nextProtocol !== previousProtocol;
 
     if (!protocolChanged) {
@@ -121,7 +132,9 @@ export function normalizeProtocolSwitches(field: XrayConfigKey, nextFormData: un
       settings: {},
     };
 
-    let nextStreamSettings = isRecord(nextItem.streamSettings) ? { ...nextItem.streamSettings } : undefined;
+    let nextStreamSettings = isRecord(nextItem.streamSettings)
+      ? { ...nextItem.streamSettings }
+      : undefined;
 
     if (nextProtocol === 'hysteria') {
       nextStreamSettings = {
@@ -144,9 +157,15 @@ export function normalizeProtocolSwitches(field: XrayConfigKey, nextFormData: un
   });
 }
 
-export function normalizeSelectedFieldValue(field: XrayConfigKey, nextFormData: unknown, previousFormData: unknown) {
+export function normalizeSelectedFieldValue(
+  field: XrayConfigKey,
+  nextFormData: unknown,
+  previousFormData: unknown,
+) {
   return normalizeSecuritySpecificSettingsInValue(
-    normalizeHysteriaStreamSettingsInValue(normalizeProtocolSwitches(field, nextFormData, previousFormData)),
+    normalizeHysteriaStreamSettingsInValue(
+      normalizeProtocolSwitches(field, nextFormData, previousFormData),
+    ),
   );
 }
 
@@ -186,7 +205,9 @@ function normalizeHysteriaStreamSettingsInValue(value: unknown): unknown {
   });
 
   if (isRecord(normalizedValue.streamSettings)) {
-    normalizedValue.streamSettings = normalizeHysteriaStreamSettings(normalizedValue.streamSettings);
+    normalizedValue.streamSettings = normalizeHysteriaStreamSettings(
+      normalizedValue.streamSettings,
+    );
   }
 
   return normalizedValue;
@@ -363,7 +384,16 @@ export const uiSchema: UiSchema = {
     ],
     servers: {
       items: {
-        'ui:order': ['address', 'port', 'domains', 'expectIPs', 'queryStrategy', 'skipFallback', 'clientIP', '*'],
+        'ui:order': [
+          'address',
+          'port',
+          'domains',
+          'expectIPs',
+          'queryStrategy',
+          'skipFallback',
+          'clientIP',
+          '*',
+        ],
       },
     },
   },
@@ -399,7 +429,17 @@ export const uiSchema: UiSchema = {
   },
   inbounds: {
     items: {
-      'ui:order': ['tag', 'listen', 'port', 'protocol', 'settings', 'streamSettings', 'sniffing', 'allocate', '*'],
+      'ui:order': [
+        'tag',
+        'listen',
+        'port',
+        'protocol',
+        'settings',
+        'streamSettings',
+        'sniffing',
+        'allocate',
+        '*',
+      ],
       listen: {
         'ui:placeholder': '0.0.0.0',
       },
@@ -448,9 +488,12 @@ export const uiSchema: UiSchema = {
         realitySettings: {
           'ui:order': [
             'dest',
+            'target',
             'serverNames',
             'privateKey',
             'shortIds',
+            'maxTimeDiff',
+            'xver',
             'publicKey',
             'serverName',
             'shortId',
@@ -460,17 +503,43 @@ export const uiSchema: UiSchema = {
           ],
         },
         sockopt: {
-          'ui:order': ['mark', 'interface', 'domainStrategy', 'tcpFastOpen', 'tcpMptcp', 'tproxy', 'dialerProxy', '*'],
+          'ui:order': [
+            'mark',
+            'interface',
+            'domainStrategy',
+            'tcpFastOpen',
+            'tcpMptcp',
+            'tproxy',
+            'dialerProxy',
+            '*',
+          ],
         },
       },
       sniffing: {
-        'ui:order': ['enabled', 'destOverride', 'routeOnly', 'metadataOnly', 'domainsExcluded', '*'],
+        'ui:order': [
+          'enabled',
+          'destOverride',
+          'routeOnly',
+          'metadataOnly',
+          'domainsExcluded',
+          '*',
+        ],
       },
     },
   },
   outbounds: {
     items: {
-      'ui:order': ['tag', 'protocol', 'settings', 'streamSettings', 'mux', 'proxySettings', 'sendThrough', 'targetStrategy', '*'],
+      'ui:order': [
+        'tag',
+        'protocol',
+        'settings',
+        'streamSettings',
+        'mux',
+        'proxySettings',
+        'sendThrough',
+        'targetStrategy',
+        '*',
+      ],
       tag: {
         'ui:placeholder': 'direct',
       },
@@ -494,14 +563,35 @@ export const uiSchema: UiSchema = {
             'ui:order': ['address', 'port', 'users', '*'],
             users: {
               items: {
-                'ui:order': ['id', 'password', 'encryption', 'security', 'alterId', 'flow', 'email', 'level', '*'],
+                'ui:order': [
+                  'id',
+                  'password',
+                  'encryption',
+                  'security',
+                  'alterId',
+                  'flow',
+                  'email',
+                  'level',
+                  '*',
+                ],
               },
             },
           },
         },
         servers: {
           items: {
-            'ui:order': ['address', 'port', 'method', 'password', 'users', 'flow', 'email', 'level', 'uot', '*'],
+            'ui:order': [
+              'address',
+              'port',
+              'method',
+              'password',
+              'users',
+              'flow',
+              'email',
+              'level',
+              'uot',
+              '*',
+            ],
             users: {
               items: {
                 'ui:order': ['user', 'pass', '*'],
@@ -531,14 +621,43 @@ export const uiSchema: UiSchema = {
           'ui:order': ['serverName', 'alpn', 'fingerprint', 'allowInsecure', 'certificates', '*'],
         },
         realitySettings: {
-          'ui:order': ['serverName', 'publicKey', 'shortId', 'fingerprint', 'spiderX', 'privateKey', 'shortIds', '*'],
+          'ui:order': [
+            'serverName',
+            'serverNames',
+            'target',
+            'publicKey',
+            'shortId',
+            'fingerprint',
+            'spiderX',
+            'privateKey',
+            'shortIds',
+            'maxTimeDiff',
+            'xver',
+            '*',
+          ],
         },
         sockopt: {
-          'ui:order': ['interface', 'domainStrategy', 'tcpFastOpen', 'tcpMptcp', 'mark', 'dialerProxy', 'tproxy', '*'],
+          'ui:order': [
+            'interface',
+            'domainStrategy',
+            'tcpFastOpen',
+            'tcpMptcp',
+            'mark',
+            'dialerProxy',
+            'tproxy',
+            '*',
+          ],
         },
       },
       mux: {
-        'ui:order': ['enabled', 'concurrency', 'xudpConcurrency', 'xudpProxyUDP443', 'padding', '*'],
+        'ui:order': [
+          'enabled',
+          'concurrency',
+          'xudpConcurrency',
+          'xudpProxyUDP443',
+          'padding',
+          '*',
+        ],
       },
       proxySettings: {
         'ui:order': ['tag', 'transportLayer', '*'],
@@ -546,7 +665,16 @@ export const uiSchema: UiSchema = {
     },
   },
   transport: {
-    'ui:order': ['tcpSettings', 'kcpSettings', 'wsSettings', 'httpSettings', 'dsSettings', 'quicSettings', 'grpcSettings', '*'],
+    'ui:order': [
+      'tcpSettings',
+      'kcpSettings',
+      'wsSettings',
+      'httpSettings',
+      'dsSettings',
+      'quicSettings',
+      'grpcSettings',
+      '*',
+    ],
   },
   observatory: {
     'ui:order': ['subjectSelector', 'probeURL', 'probeInterval', 'enableConcurrency', '*'],
@@ -579,7 +707,19 @@ export const uiSchema: UiSchema = {
   },
   commonProtocolUser: {
     items: {
-      'ui:order': ['id', 'password', 'user', 'pass', 'email', 'level', 'flow', 'security', 'encryption', 'alterId', '*'],
+      'ui:order': [
+        'id',
+        'password',
+        'user',
+        'pass',
+        'email',
+        'level',
+        'flow',
+        'security',
+        'encryption',
+        'alterId',
+        '*',
+      ],
     },
   },
   clients: {
@@ -594,7 +734,19 @@ export const uiSchema: UiSchema = {
   },
   users: {
     items: {
-      'ui:order': ['id', 'user', 'password', 'pass', 'email', 'level', 'flow', 'security', 'encryption', 'alterId', '*'],
+      'ui:order': [
+        'id',
+        'user',
+        'password',
+        'pass',
+        'email',
+        'level',
+        'flow',
+        'security',
+        'encryption',
+        'alterId',
+        '*',
+      ],
     },
   },
   peers: {
@@ -652,7 +804,17 @@ export const uiSchema: UiSchema = {
     'ui:order': ['*'],
   },
   settings: {
-    'ui:order': ['vnext', 'servers', 'domainStrategy', 'redirect', 'response', 'network', 'address', 'port', '*'],
+    'ui:order': [
+      'vnext',
+      'servers',
+      'domainStrategy',
+      'redirect',
+      'response',
+      'network',
+      'address',
+      'port',
+      '*',
+    ],
   },
   streamSettings: {
     'ui:order': [
@@ -674,22 +836,59 @@ export const uiSchema: UiSchema = {
     },
   },
   sockopt: {
-    'ui:order': ['interface', 'domainStrategy', 'tcpFastOpen', 'tcpMptcp', 'mark', 'dialerProxy', 'tproxy', '*'],
+    'ui:order': [
+      'interface',
+      'domainStrategy',
+      'tcpFastOpen',
+      'tcpMptcp',
+      'mark',
+      'dialerProxy',
+      'tproxy',
+      '*',
+    ],
   },
   tlsSettings: {
     'ui:order': ['serverName', 'alpn', 'fingerprint', 'allowInsecure', 'certificates', '*'],
   },
   realitySettings: {
-    'ui:order': ['serverName', 'publicKey', 'shortId', 'fingerprint', 'spiderX', 'privateKey', 'shortIds', '*'],
+    'ui:order': [
+      'serverName',
+      'serverNames',
+      'target',
+      'publicKey',
+      'shortId',
+      'fingerprint',
+      'spiderX',
+      'privateKey',
+      'shortIds',
+      'maxTimeDiff',
+      'xver',
+      '*',
+    ],
   },
   rawSettings: {
     'ui:order': ['acceptProxyProtocol', 'header', '*'],
   },
   wsSettings: {
-    'ui:order': ['path', 'headers', 'host', 'maxEarlyData', 'earlyDataHeaderName', 'acceptProxyProtocol', '*'],
+    'ui:order': [
+      'path',
+      'headers',
+      'host',
+      'maxEarlyData',
+      'earlyDataHeaderName',
+      'acceptProxyProtocol',
+      '*',
+    ],
   },
   grpcSettings: {
-    'ui:order': ['serviceName', 'authority', 'multiMode', 'idle_timeout', 'health_check_timeout', '*'],
+    'ui:order': [
+      'serviceName',
+      'authority',
+      'multiMode',
+      'idle_timeout',
+      'health_check_timeout',
+      '*',
+    ],
   },
   xhttpSettings: {
     'ui:order': ['host', 'path', 'mode', 'headers', 'extra', 'downloadSettings', '*'],
@@ -718,7 +917,17 @@ export const uiSchema: UiSchema = {
   },
   rules: {
     items: {
-      'ui:order': ['type', 'inboundTag', 'domain', 'ip', 'port', 'network', 'outboundTag', 'balancerTag', '*'],
+      'ui:order': [
+        'type',
+        'inboundTag',
+        'domain',
+        'ip',
+        'port',
+        'network',
+        'outboundTag',
+        'balancerTag',
+        '*',
+      ],
     },
   },
 };

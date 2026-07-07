@@ -97,9 +97,16 @@ export function downloadConfigFile(config: XrayConfig, format: ConfigFormat) {
   URL.revokeObjectURL(url);
 }
 
-function createParseOrder(primaryFormat: ConfigFormat | null, secondaryFormat: ConfigFormat | null) {
+function createParseOrder(
+  primaryFormat: ConfigFormat | null,
+  secondaryFormat: ConfigFormat | null,
+) {
   return Array.from(
-    new Set([primaryFormat, secondaryFormat, 'json', 'json5', 'yaml', 'toml'].filter(Boolean) as ConfigFormat[]),
+    new Set(
+      [primaryFormat, secondaryFormat, 'json', 'json5', 'yaml', 'toml'].filter(
+        Boolean,
+      ) as ConfigFormat[],
+    ),
   );
 }
 
@@ -107,19 +114,66 @@ export function isPlainObject(value: unknown): value is Record<string, unknown> 
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-export function parseImportedConfig(text: string, preferredFormat: ConfigFormat | null, sourceFormat: ConfigFormat | null) {
+function findUnsupportedMisspelledKey(value: unknown, path: string[] = []): string | null {
+  if (Array.isArray(value)) {
+    for (let index = 0; index < value.length; index += 1) {
+      const result = findUnsupportedMisspelledKey(value[index], [...path, String(index)]);
+      if (result) {
+        return result;
+      }
+    }
+
+    return null;
+  }
+
+  if (!isPlainObject(value)) {
+    return null;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(value, 'maxTimediff')) {
+    return [...path, 'maxTimediff'].join('.');
+  }
+
+  for (const [key, item] of Object.entries(value)) {
+    const result = findUnsupportedMisspelledKey(item, [...path, key]);
+    if (result) {
+      return result;
+    }
+  }
+
+  return null;
+}
+
+function assertNoUnsupportedMisspelledKeys(config: Record<string, unknown>) {
+  const path = findUnsupportedMisspelledKey(config);
+
+  if (path) {
+    throw new Error(`配置字段拼写错误：${path} 不受支持，请使用 maxTimeDiff。`);
+  }
+}
+
+export function parseImportedConfig(
+  text: string,
+  preferredFormat: ConfigFormat | null,
+  sourceFormat: ConfigFormat | null,
+) {
   const parseOrder = createParseOrder(sourceFormat, preferredFormat);
 
   for (const format of parseOrder) {
     try {
       const parsed = parseConfigText(text, format);
       if (isPlainObject(parsed)) {
+        assertNoUnsupportedMisspelledKeys(parsed);
         return {
           config: orderXrayConfig(parsed as XrayConfig),
           format,
         };
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('配置字段拼写错误')) {
+        throw error;
+      }
+
       // Try the next supported format.
     }
   }

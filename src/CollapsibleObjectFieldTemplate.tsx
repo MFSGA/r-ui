@@ -10,7 +10,12 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { FormContextType, ObjectFieldTemplateProps, RJSFSchema, StrictRJSFSchema } from '@rjsf/utils';
+import type {
+  FormContextType,
+  ObjectFieldTemplateProps,
+  RJSFSchema,
+  StrictRJSFSchema,
+} from '@rjsf/utils';
 import { buttonId, canExpand } from '@rjsf/utils';
 import RealitySettingsWizardDialog from './RealitySettingsWizardDialog';
 import TlsSettingsWizardDialog from './TlsSettingsWizardDialog';
@@ -22,6 +27,28 @@ import { useAccordionCollapse } from './AccordionCollapseContext';
 type CollapsibleObjectFieldTemplateExtraProps = {
   updateSelectedFieldPath?: UpdateSelectedFieldPath;
 };
+
+const networkSettingsPropertyByNetwork: Record<string, string> = {
+  raw: 'rawSettings',
+  tcp: 'rawSettings',
+  ws: 'wsSettings',
+  websocket: 'wsSettings',
+  grpc: 'grpcSettings',
+  xhttp: 'xhttpSettings',
+  httpupgrade: 'httpupgradeSettings',
+  kcp: 'kcpSettings',
+  mkcp: 'kcpSettings',
+  hysteria: 'hysteriaSettings',
+};
+
+const streamSettingsBasePropertyNames = new Set([
+  'network',
+  'security',
+  'tlsSettings',
+  'realitySettings',
+  'sockopt',
+]);
+const streamNetworkSettingsPropertyNames = new Set(Object.values(networkSettingsPropertyByNetwork));
 
 export default function CollapsibleObjectFieldTemplate<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RJSF convention requires any defaults
@@ -61,14 +88,28 @@ export default function CollapsibleObjectFieldTemplate<
     formData !== null &&
     !Array.isArray(formData);
   const objectFormData = isObjectWithSettings ? (formData as Record<string, unknown>) : undefined;
-  const isHysteriaStreamSettings = objectFormData?.network === 'hysteria';
+  const selectedNetwork =
+    typeof objectFormData?.network === 'string' ? objectFormData.network : undefined;
+  const selectedNetworkSettingsProperty = selectedNetwork
+    ? networkSettingsPropertyByNetwork[selectedNetwork]
+    : undefined;
+  const isHysteriaStreamSettings = selectedNetwork === 'hysteria';
   const isTlsSecurity = objectFormData?.security === 'tls';
   const isRealitySecurity = objectFormData?.security === 'reality';
-  const hysteriaVisiblePropertyNames = new Set(['network', 'security', 'tlsSettings', 'hysteriaSettings']);
+  const isVisibleForSelectedNetwork = (propertyName: string) => {
+    if (!isStreamSettingsObject || !streamNetworkSettingsPropertyNames.has(propertyName)) {
+      return true;
+    }
+
+    return propertyName === selectedNetworkSettingsProperty;
+  };
   const visibleProperties = properties.filter(
     (property) =>
       !property.hidden &&
-      (!isHysteriaStreamSettings || hysteriaVisiblePropertyNames.has(property.name)) &&
+      (!isHysteriaStreamSettings ||
+        streamSettingsBasePropertyNames.has(property.name) ||
+        property.name === 'hysteriaSettings') &&
+      isVisibleForSelectedNetwork(property.name) &&
       (property.name !== 'tlsSettings' || isTlsSecurity || isHysteriaStreamSettings) &&
       (property.name !== 'realitySettings' || isRealitySecurity),
   );
@@ -76,26 +117,36 @@ export default function CollapsibleObjectFieldTemplate<
   const isRealitySettingsObject =
     fieldPathId.path[fieldPathId.path.length - 1] === 'realitySettings' ||
     objectTitle.toLowerCase().includes('reality') ||
-    ('privateKey' in schemaProperties && 'publicKey' in schemaProperties && 'shortIds' in schemaProperties);
+    ('privateKey' in schemaProperties &&
+      'publicKey' in schemaProperties &&
+      'shortIds' in schemaProperties);
   const canAddProperty = canExpand<T, S, F>(schema, uiSchema, formData);
   const updateRealitySettings = updateSelectedFieldPath ?? contextUpdateSelectedFieldPath;
-  const accordionId = fieldPathId.path.length > 0 ? `accordion-${fieldPathId.path.join('-')}` : 'accordion-root';
+  const accordionId =
+    fieldPathId.path.length > 0 ? `accordion-${fieldPathId.path.join('-')}` : 'accordion-root';
   const accordionDetailsId = `${accordionId}-details`;
   const { collapsedAll, setCollapsedAll } = useAccordionCollapse();
   const [expandedLocal, setExpandedLocal] = useState(isRootObject);
   const isExpanded = collapsedAll && !isRootObject ? false : expandedLocal;
+  const nestingLevel = Math.max(fieldPathId.path.length - 1, 0);
+  const isNestedObject = nestingLevel > 0;
 
   if (isTlsSettingsObject) {
     return (
-      <Box sx={{ py: 1 }}>
-        <TlsSettingsWizardDialog title={objectTitle} description={description} required={required} properties={properties} />
+      <Box sx={{ py: 0.25 }}>
+        <TlsSettingsWizardDialog
+          title={objectTitle}
+          description={description}
+          required={required}
+          properties={properties}
+        />
       </Box>
     );
   }
 
   if (isRealitySettingsObject) {
     return (
-      <Box sx={{ py: 1 }}>
+      <Box sx={{ py: 0.25 }}>
         <RealitySettingsWizardDialog
           title={objectTitle}
           description={description}
@@ -126,25 +177,84 @@ export default function CollapsibleObjectFieldTemplate<
       sx={{
         position: 'relative',
         border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 2,
+        borderColor: isExpanded ? 'primary.100' : 'divider',
+        borderRadius: 1.5,
+        bgcolor: isExpanded && !isRootObject ? 'rgba(37, 99, 235, 0.018)' : 'background.paper',
+        boxShadow: isExpanded && !isRootObject ? 'inset 2px 0 0 rgba(37, 99, 235, 0.32)' : 'none',
+        overflow: 'hidden',
+        transition: (theme) =>
+          theme.transitions.create(['border-color', 'box-shadow', 'background-color'], {
+            duration: theme.transitions.duration.shortest,
+          }),
+        '& + &': {
+          mt: 1,
+        },
         '&:before': {
           display: 'none',
         },
+        '& .MuiAccordionSummary-root': {
+          minHeight: isNestedObject ? 48 : 54,
+          px: isNestedObject ? 2 : 2.25,
+          py: 0,
+        },
+        '& .MuiAccordionSummary-content': {
+          my: 1,
+          minWidth: 0,
+        },
+        '& .MuiAccordionSummary-expandIconWrapper': {
+          color: 'text.secondary',
+        },
       }}
     >
-      <AccordionSummary component="div" expandIcon={<ExpandMoreRoundedIcon />} aria-controls={accordionDetailsId}>
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-          <Typography variant={isRootObject ? 'h6' : 'subtitle1'} sx={{ fontWeight: 700 }}>
+      <AccordionSummary
+        component="div"
+        expandIcon={<ExpandMoreRoundedIcon />}
+        aria-controls={accordionDetailsId}
+      >
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0, width: '100%' }}>
+          <Typography
+            variant={isRootObject ? 'h6' : 'subtitle1'}
+            sx={{
+              fontWeight: 700,
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {objectTitle}
             {required ? ' *' : ''}
           </Typography>
-          <Chip size="small" label={locale === 'zh-CN' ? `${visibleProperties.length} 个字段` : `${visibleProperties.length} fields`} />
+          <Chip
+            size="small"
+            variant="outlined"
+            label={
+              locale === 'zh-CN'
+                ? `${visibleProperties.length} 个字段`
+                : `${visibleProperties.length} fields`
+            }
+            sx={{
+              height: 22,
+              border: 0,
+              bgcolor: 'action.hover',
+              color: 'text.secondary',
+              fontSize: 12,
+              flexShrink: 0,
+              '& .MuiChip-label': { px: 0.85 },
+            }}
+          />
         </Stack>
       </AccordionSummary>
 
-      <AccordionDetails id={accordionDetailsId}>
-        <Stack spacing={2}>
+      <AccordionDetails
+        id={accordionDetailsId}
+        sx={{
+          px: isNestedObject ? 2 : 2.25,
+          pt: 0,
+          pb: isNestedObject ? 1.5 : 2,
+        }}
+      >
+        <Stack spacing={isNestedObject ? 1.25 : 1.75}>
           {description ? (
             <Typography variant="body2" color="text.secondary">
               {description}
@@ -154,7 +264,16 @@ export default function CollapsibleObjectFieldTemplate<
           {optionalDataControl}
 
           {visibleProperties.map((property) => (
-            <Box key={property.name}>{property.content}</Box>
+            <Box
+              key={property.name}
+              sx={{
+                '& > .MuiFormControl-root': {
+                  my: 0.25,
+                },
+              }}
+            >
+              {property.content}
+            </Box>
           ))}
 
           {canAddProperty ? (
