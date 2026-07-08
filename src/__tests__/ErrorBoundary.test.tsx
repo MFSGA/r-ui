@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import ErrorBoundary from '../ErrorBoundary';
+import { I18nProvider } from '../i18n';
 
 afterEach(cleanup);
 
@@ -25,14 +26,16 @@ describe('ErrorBoundary', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(
-      <ErrorBoundary>
-        <BuggyComponent shouldThrow />
-      </ErrorBoundary>,
+      <I18nProvider>
+        <ErrorBoundary>
+          <BuggyComponent shouldThrow />
+        </ErrorBoundary>
+      </I18nProvider>,
     );
 
-    expect(screen.getByText('发生错误')).toBeInTheDocument();
+    expect(screen.getByText('An error occurred')).toBeInTheDocument();
     expect(screen.getByText('Test error')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '重试' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Retry/i })).toBeInTheDocument();
 
     consoleSpy.mockRestore();
   });
@@ -41,17 +44,19 @@ describe('ErrorBoundary', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(
-      <ErrorBoundary>
-        <BuggyComponent shouldThrow />
-      </ErrorBoundary>,
+      <I18nProvider>
+        <ErrorBoundary>
+          <BuggyComponent shouldThrow />
+        </ErrorBoundary>
+      </I18nProvider>,
     );
 
     // Use getAllByRole to handle potential StrictMode double-rendering
-    const retryButtons = screen.getAllByRole('button', { name: '重试' });
+    const retryButtons = screen.getAllByRole('button', { name: /Retry/i });
     fireEvent.click(retryButtons[0]);
 
     // After retry, BuggyComponent re-renders and throws again (shouldThrow still true)
-    expect(screen.getByText('发生错误')).toBeInTheDocument();
+    expect(screen.getByText('An error occurred')).toBeInTheDocument();
 
     consoleSpy.mockRestore();
   });
