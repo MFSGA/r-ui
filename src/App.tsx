@@ -47,7 +47,6 @@ import {
   configFormatOptions,
   detectConfigFormat,
   detectConfigFormatFromUrl,
-  downloadConfigFile,
   isPlainObject,
   parseImportedConfig,
   serializeConfigText,
@@ -500,15 +499,6 @@ export default function App() {
     }
   };
 
-  const handleDownloadServerConfig = () => {
-    try {
-      downloadConfigFile(config, configFormat, 'xray-server-config');
-      setOperationError(null);
-    } catch {
-      setOperationError(t('app.exportFailed'));
-    }
-  };
-
   const handleCopyClientShareLink = async () => {
     try {
       const links = createClientShareLinks();
@@ -831,9 +821,6 @@ export default function App() {
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                     <Button variant="contained" onClick={() => void handleCopyServerConfig()}>
                       {t('app.exportCopyToClipboard')}
-                    </Button>
-                    <Button variant="outlined" onClick={handleDownloadServerConfig}>
-                      {t('app.exportDownloadFile')}
                     </Button>
                   </Stack>
                 </Stack>

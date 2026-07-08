@@ -23,7 +23,7 @@ test.describe('UI Basics', () => {
     await expect(page.getByRole('button', { name: /保存|Save/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /导入配置|Import Config/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /重置|Reset/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /导出配置|Export Config|导出/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /导出|Export/i })).toBeVisible();
 
     // Preview pane is visible (the <pre> element is always rendered regardless of which module is selected)
     await expect(page.locator('pre')).toBeVisible();
@@ -35,7 +35,10 @@ test.describe('UI Basics', () => {
     // The default config has 'inbounds' as the initial module.
     // Switching to inbounds confirms the UX works whether or not it changes.
     await page.getByLabel(/模块|module|Module/i).click();
-    await page.getByRole('option', { name: /入站|Inbound/i }).first().click();
+    await page
+      .getByRole('option', { name: /入站|Inbound/i })
+      .first()
+      .click();
     await page.waitForTimeout(500);
 
     // Preview should show inbounds
@@ -43,7 +46,10 @@ test.describe('UI Basics', () => {
 
     // Switch to "log" module
     await page.getByLabel(/模块|module|Module/i).click();
-    await page.getByRole('option', { name: /日志|Log/i }).first().click();
+    await page
+      .getByRole('option', { name: /日志|Log/i })
+      .first()
+      .click();
     await page.waitForTimeout(500);
 
     // Preview should show log
@@ -63,7 +69,10 @@ test.describe('UI Basics', () => {
 
     // Switch to English
     await page.getByLabel(/语言|Language/i).click();
-    await page.getByRole('option', { name: /en|EN|English/i }).first().click();
+    await page
+      .getByRole('option', { name: /en|EN|English/i })
+      .first()
+      .click();
     await page.waitForTimeout(500);
 
     // After switching to English, verify English text appears
@@ -71,7 +80,10 @@ test.describe('UI Basics', () => {
 
     // Switch back to Chinese
     await page.getByLabel(/语言|Language/i).click();
-    await page.getByRole('option', { name: /zh|中文|Chinese/i }).first().click();
+    await page
+      .getByRole('option', { name: /zh|中文|Chinese/i })
+      .first()
+      .click();
     await page.waitForTimeout(500);
 
     // Verify Chinese text appears again
