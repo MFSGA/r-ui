@@ -1,6 +1,8 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
+import { TranslationContext, translateApp } from './i18n';
+import type { Locale } from './i18n';
 
 interface Props {
   children: ReactNode;
@@ -12,6 +14,9 @@ interface State {
 }
 
 export default class ErrorBoundary extends Component<Props, State> {
+  static contextType = TranslationContext;
+  declare context: { locale: Locale } | undefined;
+
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -31,6 +36,8 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const locale = this.context?.locale ?? 'en-US';
+
       return (
         <Box
           sx={{
@@ -43,13 +50,13 @@ export default class ErrorBoundary extends Component<Props, State> {
         >
           <Paper sx={{ p: 4, maxWidth: 500, textAlign: 'center' }} elevation={3}>
             <Typography variant="h5" gutterBottom>
-              发生错误
+              {translateApp(locale, 'app.errorBoundary.title')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {this.state.error?.message || '页面渲染时出现意外错误'}
+              {this.state.error?.message || translateApp(locale, 'app.errorBoundary.subtitle')}
             </Typography>
             <Button variant="contained" onClick={this.handleRetry}>
-              重试
+              {translateApp(locale, 'app.errorBoundary.retry')}
             </Button>
           </Paper>
         </Box>

@@ -75,7 +75,10 @@ export default function TlsSettingsWizardDialog({
     }
   }, [open]);
 
-  const visibleProperties = useMemo(() => properties.filter((property) => !property.hidden), [properties]);
+  const visibleProperties = useMemo(
+    () => properties.filter((property) => !property.hidden),
+    [properties],
+  );
   const currentStep = TLS_STEPS[activeStep] ?? TLS_STEPS[0];
   const currentStepProperties = useMemo(
     () =>
@@ -106,8 +109,15 @@ export default function TlsSettingsWizardDialog({
             ) : null}
 
             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-              <Chip label={`${visibleProperties.length} 个字段`} size="small" />
-              <Chip label={`${activeStep + 1} / ${TLS_STEPS.length} 步`} size="small" variant="outlined" />
+              <Chip
+                label={`${visibleProperties.length} ${t('template.tlsWizard.fields')}`}
+                size="small"
+              />
+              <Chip
+                label={`${activeStep + 1} / ${TLS_STEPS.length} ${t('template.tlsWizard.steps')}`}
+                size="small"
+                variant="outlined"
+              />
             </Stack>
 
             <Stepper activeStep={activeStep} alternativeLabel>
@@ -140,11 +150,17 @@ export default function TlsSettingsWizardDialog({
 
         <DialogActions>
           <Button onClick={() => setOpen(false)}>{t('template.tlsWizard.close')}</Button>
-          <Button onClick={() => setActiveStep((step) => Math.max(0, step - 1))} disabled={activeStep === 0}>
+          <Button
+            onClick={() => setActiveStep((step) => Math.max(0, step - 1))}
+            disabled={activeStep === 0}
+          >
             {t('template.tlsWizard.previous')}
           </Button>
           {activeStep < TLS_STEPS.length - 1 ? (
-            <Button variant="contained" onClick={() => setActiveStep((step) => Math.min(TLS_STEPS.length - 1, step + 1))}>
+            <Button
+              variant="contained"
+              onClick={() => setActiveStep((step) => Math.min(TLS_STEPS.length - 1, step + 1))}
+            >
               {t('template.tlsWizard.next')}
             </Button>
           ) : (
