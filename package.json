@@ -13,7 +13,7 @@
       "prettier --write"
     ]
   },
-  "packageManager": "pnpm@10.13.1",
+  "packageManager": "pnpm@11.10.0",
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc -b",
