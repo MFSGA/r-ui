@@ -64,6 +64,34 @@ test.describe('UI Basics', () => {
     await expect(page.getByText(/"dns"/i)).toBeVisible();
   });
 
+  test('TCP Reality action is shown only once and adds one inbound', async ({ page }) => {
+    await page.goto('/');
+
+    const addTcpRealityButton = page.getByRole('button', {
+      name: /新增 TCP Reality|Add TCP Reality/i,
+    });
+    const preview = page.locator('pre').first();
+
+    await expect(addTcpRealityButton).toHaveCount(1);
+
+    const initialConfig = JSON.parse((await preview.textContent()) ?? '{}') as {
+      inbounds?: unknown[];
+    };
+    const initialInboundCount = initialConfig.inbounds?.length ?? 0;
+
+    await addTcpRealityButton.click();
+
+    await expect(addTcpRealityButton).toHaveCount(1);
+    await expect
+      .poll(async () => {
+        const nextConfig = JSON.parse((await preview.textContent()) ?? '{}') as {
+          inbounds?: unknown[];
+        };
+        return nextConfig.inbounds?.length ?? 0;
+      })
+      .toBe(initialInboundCount + 1);
+  });
+
   test('locale switching changes UI language', async ({ page }) => {
     await page.goto('/');
 

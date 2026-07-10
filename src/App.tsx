@@ -253,12 +253,41 @@ export default function App() {
     }),
     [updateSelectedFieldPath],
   );
+  const handleAddTcpRealityInbound = useCallback(() => {
+    setConfig((currentConfig) => {
+      const currentInbounds = Array.isArray(currentConfig.inbounds) ? currentConfig.inbounds : [];
+      const nextInbound = createTcpRealityInbound(currentInbounds);
+
+      return orderXrayConfig({
+        ...currentConfig,
+        inbounds: [...currentInbounds, nextInbound],
+      });
+    });
+    setSelectedField('inbounds');
+    setOperationError(null);
+    setIsSubmitted(false);
+  }, []);
+  const extraActions = useMemo(() => {
+    if (selectedField !== 'inbounds') return undefined;
+    return (
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={<AddCircleOutlineRoundedIcon />}
+        onClick={handleAddTcpRealityInbound}
+        sx={{ borderRadius: 1.5, flexShrink: 0, fontWeight: 700 }}
+      >
+        {t('app.addTcpRealityInbound')}
+      </Button>
+    );
+  }, [selectedField, t, handleAddTcpRealityInbound]);
   const formContext = useMemo(
     () => ({
       currentData: selectedFieldValue,
+      extraActions,
       updateSelectedFieldPath,
     }),
-    [selectedFieldValue, updateSelectedFieldPath],
+    [selectedFieldValue, extraActions, updateSelectedFieldPath],
   );
   const selectedFieldOptions = useMemo(() => getTopLevelFieldOptions(locale), [locale]);
   const isImportMenuOpen = Boolean(importMenuAnchorEl);
@@ -463,21 +492,6 @@ export default function App() {
     setIsSubmitted(false);
   };
 
-  const handleAddTcpRealityInbound = () => {
-    setConfig((currentConfig) => {
-      const currentInbounds = Array.isArray(currentConfig.inbounds) ? currentConfig.inbounds : [];
-      const nextInbound = createTcpRealityInbound(currentInbounds);
-
-      return orderXrayConfig({
-        ...currentConfig,
-        inbounds: [...currentInbounds, nextInbound],
-      });
-    });
-    setSelectedField('inbounds');
-    setOperationError(null);
-    setIsSubmitted(false);
-  };
-
   const createClientShareLinks = () => {
     const serverAddress = exportServerAddress.trim();
 
@@ -588,17 +602,6 @@ export default function App() {
                           ))}
                         </Select>
                       </FormControl>
-
-                      {selectedField === 'inbounds' ? (
-                        <Button
-                          variant="outlined"
-                          onClick={handleAddTcpRealityInbound}
-                          startIcon={<AddCircleOutlineRoundedIcon />}
-                          sx={{ minWidth: { xs: '100%', sm: 180 } }}
-                        >
-                          {t('app.addTcpRealityInbound')}
-                        </Button>
-                      ) : null}
                     </Stack>
 
                     <FormControl sx={{ minWidth: 160 }}>

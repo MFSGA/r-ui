@@ -23,15 +23,23 @@ export function CompactArrayFieldTemplate<
   const {
     canAdd,
     disabled,
+    fieldPathId,
     items,
     onAddClick,
     optionalDataControl,
     readonly,
+    registry,
     required,
     schema,
     title,
     uiSchema,
   } = props;
+  const extraActions =
+    fieldPathId.path.length === 0
+      ? ((registry?.formContext as Record<string, unknown> | undefined)?.extraActions as
+          | React.ReactNode
+          | undefined)
+      : undefined;
   const label = uiSchema?.['ui:title'] ?? title;
   const description = uiSchema?.['ui:description'] ?? schema.description;
 
@@ -84,6 +92,8 @@ export function CompactArrayFieldTemplate<
         </Box>
 
         {optionalDataControl}
+
+        {extraActions ?? null}
 
         {canAdd ? (
           <Button

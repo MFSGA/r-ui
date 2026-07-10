@@ -4,7 +4,7 @@ type Dict = Record<string, unknown>;
 
 const DEFAULT_LISTEN = '0.0.0.0';
 const DEFAULT_TARGET = 'www.microsoft.com';
-const DEFAULT_START_PORT = 39443;
+const DEFAULT_START_PORT = 33300;
 
 export function createTcpRealityInbound(existingInbounds: unknown[] = []) {
   const port = findNextAvailablePort(existingInbounds, DEFAULT_START_PORT);
